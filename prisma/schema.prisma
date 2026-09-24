@@ -1,0 +1,488 @@
+// AfriSaytu data model (cahier des charges v2.1, section 9).
+//
+// Conventions:
+// - Every business table carries organizationId (tenant isolation). It always comes from the
+//   Clerk session on the server, never from the client.
+// - Money is stored as Int (FCFA has no cents). Percentages are stored in basis points
+//   (150 = 1.5 %). Never use Float for an amount.
+// - A balance is never stored: it is the sum of LedgerEntry.delta for an account.
+// - Validated rows are immutable: no delete on Transaction, LedgerEntry, DailyClosing, AuditLog.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  MANAGER
+  AGENT
+}
+
+enum AccountKind {
+  OPERATOR // electronic balance (UV / float) held with one operator
+  CASH // physical cash drawer of a branch
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  SEND
+  AIRTIME
+  BILL
+  OTHER
+}
+
+enum TransactionStatus {
+  VALID
+  CANCELLED
+}
+
+enum MovementKind {
+  UV_TOPUP
+  UV_SELL
+  CASH_IN
+  CASH_OUT
+  TRANSFER
+  COMMISSION_PAYOUT
+}
+
+enum LedgerReason {
+  OPENING // opening balance of an account
+  TRANSACTION // effect of a customer operation
+  MOVEMENT // effect of an internal movement
+  CANCELLATION // counter-entry created when an operation is cancelled
+  ADJUSTMENT // closing difference (counted - theoretical)
+}
+
+enum ClosingStatus {
+  OPEN
+  CLOSED
+  REOPENED
+}
+
+enum RoundingMode {
+  FLOOR
+  NEAREST
+  CEIL
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE // grace period of 7 days
+  READ_ONLY
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Tenant, branches and members
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id         String   @id @default(cuid())
+  clerkOrgId String   @unique
+  name       String
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Organization-wide settings
+  roundingMode          RoundingMode @default(NEAREST)
+  allowManualCommission Boolean      @default(false)
+  blockNegativeBalance  Boolean      @default(false)
+  closingDiffThreshold  Int          @default(0) // FCFA, a justification is required above it
+
+  branches        Branch[]
+  members         Member[]
+  memberBranches  MemberBranch[]
+  orgOperators    OrgOperator[]
+  accounts        Account[]
+  transactions    Transaction[]
+  ledgerEntries   LedgerEntry[]
+  movements       InternalMovement[]
+  commissionRules CommissionRule[]
+  closings        DailyClosing[]
+  closingLines    ClosingLine[]
+  subscriptions   Subscription[]
+  payments        Payment[]
+  auditLogs       AuditLog[]
+}
+
+// Point de vente: a shop or kiosk with its own cash drawer and operator accounts.
+model Branch {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  address        String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  members      MemberBranch[]
+  accounts     Account[]
+  transactions Transaction[]
+  movements    InternalMovement[]
+  closings     DailyClosing[]
+
+  @@index([organizationId])
+}
+
+model Member {
+  id             String   @id @default(cuid())
+  organizationId String
+  clerkUserId    String
+  name           String
+  phone          String?
+  role           Role
+  isActive       Boolean  @default(true) // a deactivated member keeps their history
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization  Organization       @relation(fields: [organizationId], references: [id])
+  branches      MemberBranch[]
+  transactions  Transaction[]      @relation("TransactionAuthor")
+  cancelled     Transaction[]      @relation("TransactionCanceller")
+  movements     InternalMovement[]
+  ledgerEntries LedgerEntry[]
+  closings      DailyClosing[]
+  auditLogs     AuditLog[]
+
+  @@unique([organizationId, clerkUserId])
+  @@index([organizationId])
+}
+
+// Which branches a member can work on.
+model MemberBranch {
+  id             String @id @default(cuid())
+  organizationId String
+  memberId       String
+  branchId       String
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  member       Member       @relation(fields: [memberId], references: [id])
+  branch       Branch       @relation(fields: [branchId], references: [id])
+
+  @@unique([memberId, branchId])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Operators
+// ---------------------------------------------------------------------------
+
+// Global catalogue managed by the SaaS admin. No organizationId on purpose.
+model OperatorCatalog {
+  id             String   @id @default(cuid())
+  name           String
+  code           String   @unique
+  logoUrl        String?
+  color          String? // theme colour of the operator (hex)
+  isActive       Boolean  @default(true)
+  defaultEffects Json? // default balance-effect matrix (cahier 6.1), editable per organization
+  createdAt      DateTime @default(now())
+
+  orgOperators    OrgOperator[]
+  accounts        Account[]
+  transactions    Transaction[]
+  commissionRules CommissionRule[]
+}
+
+// Operator activated by an organization.
+model OrgOperator {
+  id             String   @id @default(cuid())
+  organizationId String
+  operatorId     String
+  isActive       Boolean  @default(true) // deactivated: hidden at entry, kept in history
+  effectsConfig  Json? // organization override of the balance-effect matrix
+  createdAt      DateTime @default(now())
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  operator     OperatorCatalog @relation(fields: [operatorId], references: [id])
+
+  @@unique([organizationId, operatorId])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Accounts and ledger
+// ---------------------------------------------------------------------------
+
+// One UV account per operator and branch, and one cash drawer per branch.
+model Account {
+  id             String      @id @default(cuid())
+  organizationId String
+  branchId       String
+  kind           AccountKind
+  operatorId     String? // set for OPERATOR accounts, null for CASH
+  label          String
+  accountNumber  String?
+  alertThreshold Int? // FCFA, dashboard alert when the balance goes below
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+
+  organization  Organization       @relation(fields: [organizationId], references: [id])
+  branch        Branch             @relation(fields: [branchId], references: [id])
+  operator      OperatorCatalog?   @relation(fields: [operatorId], references: [id])
+  ledgerEntries LedgerEntry[]
+  closingLines  ClosingLine[]
+  movementsFrom InternalMovement[] @relation("MovementFrom")
+  movementsTo   InternalMovement[] @relation("MovementTo")
+
+  @@unique([branchId, kind, operatorId])
+  @@index([organizationId, branchId])
+}
+
+// The ledger. Balance of an account = sum of delta. Rows are never updated or deleted.
+model LedgerEntry {
+  id             String       @id @default(cuid())
+  organizationId String
+  accountId      String
+  reason         LedgerReason
+  delta          Int // signed FCFA amount
+  transactionId  String?
+  movementId     String?
+  closingId      String?
+  reversalOfId   String? // set on a CANCELLATION entry: the entry it counters
+  memberId       String? // author of the entry
+  createdAt      DateTime     @default(now())
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  account      Account           @relation(fields: [accountId], references: [id])
+  transaction  Transaction?      @relation(fields: [transactionId], references: [id])
+  movement     InternalMovement? @relation(fields: [movementId], references: [id])
+  closing      DailyClosing?     @relation(fields: [closingId], references: [id])
+  reversalOf   LedgerEntry?      @relation("LedgerReversal", fields: [reversalOfId], references: [id])
+  reversedBy   LedgerEntry[]     @relation("LedgerReversal")
+  member       Member?           @relation(fields: [memberId], references: [id])
+
+  @@index([organizationId, accountId, createdAt])
+  @@index([transactionId])
+  @@index([movementId])
+  @@index([closingId])
+}
+
+// ---------------------------------------------------------------------------
+// Transactions and internal movements
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id               String            @id @default(cuid())
+  organizationId   String
+  branchId         String
+  memberId         String // author
+  operatorId       String
+  type             TransactionType
+  amount           Int // FCFA
+  fee              Int               @default(0) // paid by the customer
+  feeInCash        Boolean           @default(false) // fee collected in cash rather than electronically
+  commission       Int               @default(0) // earned by the agent, frozen at entry
+  commissionRuleId String? // rule used at entry, frozen
+  noRule           Boolean           @default(false) // no matching rule: commission is 0, flagged for the manager
+  customerPhone    String? // optional, personal data (law 2008-12), masked on display
+  reference        String? // operator reference, unique per operator within the organization
+  note             String?
+  status           TransactionStatus @default(VALID)
+  cancelReason     String?
+  cancelledById    String?
+  cancelledAt      DateTime?
+  closingId        String?
+  idempotencyKey   String // generated by the client to absorb network retries
+  clientCreatedAt  DateTime? // phone time, informative only
+  createdAt        DateTime          @default(now())
+
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  branch         Branch          @relation(fields: [branchId], references: [id])
+  member         Member          @relation("TransactionAuthor", fields: [memberId], references: [id])
+  cancelledBy    Member?         @relation("TransactionCanceller", fields: [cancelledById], references: [id])
+  operator       OperatorCatalog @relation(fields: [operatorId], references: [id])
+  commissionRule CommissionRule? @relation(fields: [commissionRuleId], references: [id])
+  closing        DailyClosing?   @relation(fields: [closingId], references: [id])
+  ledgerEntries  LedgerEntry[]
+
+  @@unique([organizationId, idempotencyKey])
+  @@unique([organizationId, operatorId, reference])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, reference])
+  @@index([organizationId, branchId, createdAt])
+}
+
+// Movements without a customer: UV top-up, cash in/out, transfer, commission payout.
+model InternalMovement {
+  id             String       @id @default(cuid())
+  organizationId String
+  branchId       String
+  memberId       String
+  kind           MovementKind
+  amount         Int // FCFA
+  fromAccountId  String?
+  toAccountId    String?
+  description    String?
+  createdAt      DateTime     @default(now())
+
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  branch        Branch        @relation(fields: [branchId], references: [id])
+  member        Member        @relation(fields: [memberId], references: [id])
+  fromAccount   Account?      @relation("MovementFrom", fields: [fromAccountId], references: [id])
+  toAccount     Account?      @relation("MovementTo", fields: [toAccountId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, branchId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Commission rules
+// ---------------------------------------------------------------------------
+
+// One rule = organization + operator + type + amount range [minAmount, maxAmount].
+// Ranges of the same operator/type must not overlap (checked when saving a rule).
+// Editing a rule never recalculates past transactions: the result is frozen on the transaction.
+model CommissionRule {
+  id             String          @id @default(cuid())
+  organizationId String
+  operatorId     String
+  type           TransactionType
+  minAmount      Int
+  maxAmount      Int
+  fixedFee       Int             @default(0) // fixed part of the agent commission
+  percentage     Int             @default(0) // basis points: 150 = 1.5 %
+  minCommission  Int?
+  cap            Int?
+  feeFixed       Int             @default(0) // fixed part of the customer fee
+  feePercentage  Int             @default(0) // basis points
+  validFrom      DateTime        @default(now())
+  validTo        DateTime?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  operator     OperatorCatalog @relation(fields: [operatorId], references: [id])
+  transactions Transaction[]
+
+  @@index([organizationId, operatorId, type])
+}
+
+// ---------------------------------------------------------------------------
+// Daily closing
+// ---------------------------------------------------------------------------
+
+model DailyClosing {
+  id             String        @id @default(cuid())
+  organizationId String
+  branchId       String
+  openedAt       DateTime      @default(now())
+  closedAt       DateTime?
+  closedById     String?
+  status         ClosingStatus @default(OPEN)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id])
+  branch        Branch        @relation(fields: [branchId], references: [id])
+  closedBy      Member?       @relation(fields: [closedById], references: [id])
+  lines         ClosingLine[]
+  transactions  Transaction[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([organizationId, branchId, openedAt])
+}
+
+model ClosingLine {
+  id                 String  @id @default(cuid())
+  organizationId     String
+  closingId          String
+  accountId          String
+  openingBalance     Int
+  theoreticalBalance Int
+  countedBalance     Int
+  difference         Int // counted - theoretical
+  justification      String?
+  cashCount          Json? // banknote and coin count for the cash account
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  closing      DailyClosing @relation(fields: [closingId], references: [id])
+  account      Account      @relation(fields: [accountId], references: [id])
+
+  @@unique([closingId, accountId])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Subscription and audit
+// ---------------------------------------------------------------------------
+
+// Kept as rows (not on Organization) to preserve the history.
+model Subscription {
+  id               String             @id @default(cuid())
+  organizationId   String
+  plan             SubscriptionPlan
+  status           SubscriptionStatus @default(TRIAL)
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime?
+  createdAt        DateTime           @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  payments     Payment[]
+
+  @@index([organizationId, createdAt])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  organizationId String
+  subscriptionId String?
+  amount         Int // FCFA
+  provider       String // aggregator or operator used
+  providerRef    String?
+  status         PaymentStatus @default(PENDING)
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@unique([provider, providerRef])
+  @@index([organizationId, createdAt])
+}
+
+// Immutable log of sensitive actions: cancellation, reopening, rule change, role change, export.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  memberId       String?
+  action         String
+  entity         String
+  entityId       String?
+  reason         String?
+  before         Json?
+  after          Json?
+  ip             String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  member       Member?      @relation(fields: [memberId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, entity, entityId])
+}
