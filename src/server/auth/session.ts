@@ -5,13 +5,19 @@ export type SessionContext = {
   clerkOrgId: string
 }
 
-export type SessionErrorCode = "NO_SESSION" | "NO_ORGANIZATION"
+export type SessionErrorCode = "NO_SESSION" | "NO_ORGANIZATION" | "ORGANIZATION_NOT_PROVISIONED"
+
+const SESSION_ERROR_MESSAGES: Record<SessionErrorCode, string> = {
+  NO_SESSION: "Not signed in",
+  NO_ORGANIZATION: "No active organization",
+  ORGANIZATION_NOT_PROVISIONED: "Organization has no record in the database yet",
+}
 
 export class SessionError extends Error {
   readonly code: SessionErrorCode
 
   constructor(code: SessionErrorCode) {
-    super(code === "NO_SESSION" ? "Not signed in" : "No active organization")
+    super(SESSION_ERROR_MESSAGES[code])
     this.name = "SessionError"
     this.code = code
   }
