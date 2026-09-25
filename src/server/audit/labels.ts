@@ -1,6 +1,7 @@
 import { formatFCFA } from "@/lib/money"
 import { TYPE_LABELS, type TransactionTypeKey } from "@/lib/operation-types"
 import { ROLE_LABELS, roleLabel, type RoleKey } from "@/lib/roles"
+import { PLAN_LABELS } from "@/server/plans/limits"
 import { AUDIT_ACTIONS, isAuditAction, type AuditActionKey } from "@/lib/audit-actions"
 
 // Pure: turns an audit row into a French sentence for the journal screen (F-64).
@@ -56,6 +57,12 @@ function detailOf(action: AuditActionKey, before: Json, after: Json): string | n
       const to = text(after.role)
       if (!from || !to || !Object.hasOwn(ROLE_LABELS, from) || !Object.hasOwn(ROLE_LABELS, to)) return null
       return `${roleLabel(from as RoleKey)} → ${roleLabel(to as RoleKey)}`
+    }
+    case "subscription.plan": {
+      const from = text(before.plan)
+      const to = text(after.plan)
+      if (!from || !to || !Object.hasOwn(PLAN_LABELS, from) || !Object.hasOwn(PLAN_LABELS, to)) return null
+      return `${PLAN_LABELS[from as keyof typeof PLAN_LABELS]} → ${PLAN_LABELS[to as keyof typeof PLAN_LABELS]}`
     }
     case "branch.create":
       return text(after.name)

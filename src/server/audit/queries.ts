@@ -74,7 +74,7 @@ export async function listAudit(ctx: ActorContext, filters: AuditFilters, now = 
       createdAt: entry.createdAt,
       ...describeAudit(entry),
       reason: entry.reason,
-      authorName: entry.member?.name ?? "Système",
+      authorName: entry.member?.name ?? "Support AfriSaytu", // no member: the SaaS admin
       branchName: entry.branch?.name ?? null,
     })),
     members: authors

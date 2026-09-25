@@ -16,6 +16,11 @@ export const AUDIT_ACTIONS = {
   "operator.activate": "Activation d'opérateur",
   "operator.deactivate": "Désactivation d'opérateur",
   "operator.effects": "Réglage d'opérateur",
+  "subscription.extendTrial": "Prolongation de l'essai (support)",
+  "subscription.payment": "Paiement enregistré (support)",
+  "subscription.plan": "Changement de formule (support)",
+  "subscription.suspend": "Suspension du compte (support)",
+  "subscription.reactivate": "Réactivation du compte (support)",
 } as const
 
 export type AuditActionKey = keyof typeof AUDIT_ACTIONS

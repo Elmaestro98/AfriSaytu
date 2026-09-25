@@ -44,3 +44,13 @@ const shortDayFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, w
 export function formatShortDay(key: string): string {
   return shortDayFormat.format(new Date(`${key}T12:00:00.000Z`))
 }
+
+// Same day `months` months later (negative: earlier), same time of day, clamped to the end of a
+// shorter month: 31 January + 1 month = 28 or 29 February. Dakar is UTC+0 all year.
+export function addCalendarMonths(date: Date, months: number): Date {
+  const firstOfTarget = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1))
+  const lastDay = new Date(Date.UTC(firstOfTarget.getUTCFullYear(), firstOfTarget.getUTCMonth() + 1, 0)).getUTCDate()
+  const result = new Date(date)
+  result.setUTCFullYear(firstOfTarget.getUTCFullYear(), firstOfTarget.getUTCMonth(), Math.min(date.getUTCDate(), lastDay))
+  return result
+}

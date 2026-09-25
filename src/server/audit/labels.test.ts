@@ -33,6 +33,10 @@ describe("describeAudit", () => {
     expect(describeAudit({ action: "member.changeRole", before: { role: "AGENT" }, after: { role: "MANAGER" } }).detail).toBe("Agent → Gérant")
   })
 
+  it("details a plan change made by the support", () => {
+    expect(describeAudit({ action: "subscription.plan", before: { plan: "BASIC" }, after: { plan: "PRO" } }).detail).toBe("Basic → Pro")
+  })
+
   it("only reports a threshold change when the threshold changed", () => {
     expect(describeAudit({ action: "account.update", before: { alertThreshold: 50_000 }, after: { alertThreshold: 50_000 } }).detail).toBeNull()
     expect(describeAudit({ action: "account.update", before: { alertThreshold: 50_000 }, after: { alertThreshold: null } }).detail).toBe("Seuil d'alerte retiré")

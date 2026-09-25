@@ -1,5 +1,5 @@
 import type { SubscriptionPlan } from "@/generated/prisma/enums"
-import { dayKey } from "@/lib/dates"
+import { addCalendarMonths, startOfDakarDay } from "@/lib/dates"
 
 // Plan limits of the cahier des charges, section 13. null = unlimited.
 export type PlanLimits = {
@@ -53,10 +53,7 @@ export const PLAN_HISTORY_MONTHS: Record<SubscriptionPlan, number | null> = {
 export function historyStart(plan: SubscriptionPlan, now: Date): Date | null {
   const months = PLAN_HISTORY_MONTHS[plan]
   if (months === null) return null
-  const [year, month, day] = dayKey(now).split("-").map(Number)
-  const target = new Date(Date.UTC(year, month - 1 - months, 1))
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate()
-  return new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), Math.min(day, lastDay)))
+  return addCalendarMonths(startOfDakarDay(now), -months)
 }
 
 function underLimit(limit: number | null, current: number): boolean {
