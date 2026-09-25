@@ -30,7 +30,7 @@ export function AddOperatorForm({ branchId, operators }: AddOperatorFormProps) {
 
   if (!open) {
     return (
-      <Button type="button" variant="outline" className="h-12 w-full border-dashed text-base" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" className="mt-2 h-11 w-full border-dashed" onClick={() => setOpen(true)}>
         <Plus className="size-5" aria-hidden />
         Ajouter un opérateur
       </Button>
@@ -47,9 +47,12 @@ export function AddOperatorForm({ branchId, operators }: AddOperatorFormProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-muted p-4">
-      <p className="font-semibold">Ajouter un opérateur</p>
-      <div className="grid grid-cols-2 gap-3">
+    <div className="mt-2 flex flex-col gap-4 rounded-xl bg-muted p-4">
+      <div>
+        <p className="font-semibold">Ajouter un opérateur</p>
+        <p className="text-sm text-muted-foreground">Un compte UV est ouvert pour ce point de vente, avec son solde de départ.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {operators.map((operator) => (
           <OperatorTile
             key={operator.id}

@@ -1,3 +1,4 @@
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { ActorContext } from "@/server/auth/actor"
 import { getBalances } from "@/server/ledger/balances"
 import { listActiveOrgOperators } from "@/server/operators/manage"
@@ -7,6 +8,7 @@ export type AccountRow = {
   kind: "OPERATOR" | "CASH"
   label: string
   color: string | null
+  logoSrc: string | null
   accountNumber: string | null
   alertThreshold: number | null
   balance: number // theoretical balance = sum of ledger lines
@@ -44,7 +46,7 @@ export async function listManagedBranches(ctx: ActorContext): Promise<BranchRow[
           accountNumber: true,
           alertThreshold: true,
           operatorId: true,
-          operator: { select: { color: true } },
+          operator: { select: { color: true, logo: { select: { updatedAt: true } } } },
         },
       },
     },
@@ -68,6 +70,7 @@ export async function listManagedBranches(ctx: ActorContext): Promise<BranchRow[
         kind: account.kind,
         label: account.label,
         color: account.operator?.color ?? null,
+        logoSrc: account.operatorId ? operatorLogoSrc(account.operatorId, account.operator?.logo?.updatedAt) : null,
         accountNumber: account.accountNumber,
         alertThreshold: account.alertThreshold,
         balance: balances.get(account.id) ?? 0,

@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus } from "lucide-react"
 import { useState, useTransition } from "react"
 import { FormProvider, useForm } from "react-hook-form"
 
@@ -22,20 +21,11 @@ const EMPTY: CreateBranchInput = {
   cash: { openingBalance: 0, alertThreshold: 0 },
 }
 
-export function NewBranchForm({ operators }: { operators: readonly ActiveOperator[] }) {
-  const [open, setOpen] = useState(false)
+// Opened in a side panel by NewBranchSheet; onDone closes it (after a creation or on cancel).
+export function NewBranchForm({ operators, onDone }: { operators: readonly ActiveOperator[]; onDone: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const form = useForm<CreateBranchInput>({ resolver: zodResolver(createBranchSchema), defaultValues: EMPTY })
-
-  if (!open) {
-    return (
-      <Button type="button" className="h-12 w-full text-base font-bold" onClick={() => setOpen(true)}>
-        <Plus className="size-5" aria-hidden />
-        Nouveau point de vente
-      </Button>
-    )
-  }
 
   const submit = (values: CreateBranchInput) => {
     setError(null)
@@ -43,7 +33,7 @@ export function NewBranchForm({ operators }: { operators: readonly ActiveOperato
       const result = await createBranchAction(values)
       if (result.ok) {
         form.reset(EMPTY)
-        setOpen(false)
+        onDone()
       } else {
         setError(result.error)
       }
@@ -52,8 +42,7 @@ export function NewBranchForm({ operators }: { operators: readonly ActiveOperato
 
   return (
     <FormProvider {...form}>
-      <form noValidate onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-6 rounded-2xl border bg-card p-4">
-        <h2 className="font-heading text-xl font-bold">Nouveau point de vente</h2>
+      <form noValidate onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-6">
         <BranchStep />
         <OperatorsStep catalog={operators} />
         <CashStep catalog={operators} />
@@ -66,7 +55,7 @@ export function NewBranchForm({ operators }: { operators: readonly ActiveOperato
           <Button type="submit" className="h-12 flex-[2] text-base font-bold" disabled={isPending}>
             {isPending ? "Création…" : "Créer le point de vente"}
           </Button>
-          <Button type="button" variant="outline" className="h-12 flex-1" disabled={isPending} onClick={() => setOpen(false)}>
+          <Button type="button" variant="outline" className="h-12 flex-1" disabled={isPending} onClick={onDone}>
             Annuler
           </Button>
         </div>
