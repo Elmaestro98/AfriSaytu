@@ -101,7 +101,7 @@ export function LedgerLines({ lines, now }: { lines: readonly LedgerLine[]; now:
             })}
           </ol>
 
-          <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-xs lg:block">
+          <div className="hidden overflow-x-auto rounded-2xl border bg-card shadow-xs lg:block">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground uppercase">
                 <tr>

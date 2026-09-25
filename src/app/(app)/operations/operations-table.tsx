@@ -1,5 +1,6 @@
 "use client"
 
+import { Pencil, X } from "lucide-react"
 import { Fragment, useState } from "react"
 
 import { OperatorBadge } from "@/components/business/operator-badge"
@@ -24,14 +25,14 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
   const columns = showAuthor ? 8 : 7
 
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card">
+    <div className="overflow-x-auto rounded-2xl border bg-card">
       <table className="w-full text-sm">
         <thead className="bg-muted text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           <tr>
             <th scope="col" className="px-4 py-3">Date</th>
             <th scope="col" className="px-4 py-3">Opération</th>
-            <th scope="col" className="px-4 py-3">Client</th>
-            <th scope="col" className="px-4 py-3">Référence</th>
+            <th scope="col" className="hidden px-4 py-3 xl:table-cell">Client</th>
+            <th scope="col" className="hidden px-4 py-3 xl:table-cell">Référence</th>
             {showAuthor && <th scope="col" className="px-4 py-3">Agent</th>}
             <th scope="col" className="px-4 py-3 text-right">Montant</th>
             <th scope="col" className="px-4 py-3 text-right">Commission</th>
@@ -61,8 +62,8 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap tabular-nums">{operation.customerPhone ?? "—"}</td>
-                  <td className="px-4 py-3">{operation.reference ?? "—"}</td>
+                  <td className="hidden px-4 py-3 whitespace-nowrap tabular-nums xl:table-cell">{operation.customerPhone ?? "—"}</td>
+                  <td className="hidden px-4 py-3 xl:table-cell">{operation.reference ?? "—"}</td>
                   {showAuthor && <td className="px-4 py-3">{operation.authorName}</td>}
                   <td className={cn("px-4 py-3 text-right font-heading text-base font-bold whitespace-nowrap tabular-nums", cancelled && "text-muted-foreground line-through")}>
                     {formatFCFA(operation.amount)}
@@ -74,11 +75,13 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
                   <td className="px-4 py-3 text-right">
                     {operation.canCancel && cancellingId !== operation.id && (
                       <span className="flex justify-end gap-1">
-                        <Button type="button" variant="ghost" className="h-9" onClick={() => setCancelling({ id: operation.id, correct: true })}>
-                          Corriger
+                        <Button type="button" variant="outline" size="icon" className="size-9" title="Corriger"
+                          aria-label={`Corriger : ${TYPE_LABELS[operation.type]} ${operation.operatorName}`} onClick={() => setCancelling({ id: operation.id, correct: true })}>
+                          <Pencil className="size-4" aria-hidden />
                         </Button>
-                        <Button type="button" variant="ghost" className="h-9 text-destructive" onClick={() => setCancelling({ id: operation.id, correct: false })}>
-                          Annuler
+                        <Button type="button" variant="ghost" size="icon" className="size-9 text-destructive" title="Annuler"
+                          aria-label={`Annuler : ${TYPE_LABELS[operation.type]} ${operation.operatorName}`} onClick={() => setCancelling({ id: operation.id, correct: false })}>
+                          <X className="size-4" aria-hidden />
                         </Button>
                       </span>
                     )}
