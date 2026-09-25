@@ -12,6 +12,16 @@ Référence complète : `docs/cahier-des-charges-v2.1.pdf`. En cas de contradict
 fichier et le cahier des charges, c'est le cahier des charges qui fait foi ; signale-moi
 l'écart.
 
+**Écarts décidés par le propriétaire du produit** (ils priment sur le cahier des charges ; ne
+pas les « corriger ») :
+
+- Commission en mode « volume du jour » par point de vente (section 3), en plus du mode par
+  opération du cahier (6.4).
+- Essai gratuit de 7 jours (cahier : 14), puis 7 jours de grâce, puis lecture seule.
+- Tarifs mensuels : Basic 5 000, Pro 7 000, Business 10 000 FCFA (cahier : indicatifs).
+- Paiement de l'abonnement par lien marchand Wave, confirmé à la main par l'Admin SaaS, en
+  attendant un agrégateur (F-60 demande une activation sans intervention).
+
 ---
 
 ## 1. Stack
@@ -54,9 +64,11 @@ l'écart.
 4. **Immuabilité.** Une opération validée n'est jamais modifiée ni supprimée. Correction =
    annulation avec motif (contre-passation des lignes) puis nouvelle saisie. Pas de
    `delete` sur `Transaction`, `LedgerEntry`, `DailyClosing`, `AuditLog`.
-5. **Commission figée.** À la saisie, la commission calculée et le `commissionRuleId`
-   utilisé sont stockés sur l'opération. Modifier une règle ne recalcule **jamais** le
-   passé.
+5. **Commission figée.** Mode « par opération » : à la saisie, la commission calculée et le
+   `commissionRuleId` utilisé sont stockés sur l'opération. Mode « volume du jour » : un jour
+   passé se calcule **toujours** avec le barème en vigueur ce jour-là (paliers versionnés,
+   jamais modifiés ni supprimés). Dans les deux cas, modifier une règle ou un barème ne
+   recalcule **jamais** le passé.
 6. **Vérification serveur.** Les permissions sont contrôlées dans chaque Server Action et
    Route Handler. Cacher un bouton dans l'UI n'est pas un contrôle d'accès.
 7. **Fuseau.** Africa/Dakar. Horodatage serveur ; l'heure du téléphone est conservée
@@ -89,6 +101,13 @@ codée en dur dans les composants. La logique vit dans un module unique
 
 ### Calcul de la commission
 
+Chaque opérateur du catalogue a un **mode de commission** (`OperatorCatalog.commissionMode`),
+choisi par l'Admin SaaS sur la fiche barème de l'opérateur (console Admin).
+
+#### Mode « par opération » (`PER_TRANSACTION`)
+
+Chaque opération a sa commission, selon les règles de l'organisation (`CommissionRule`) :
+
 ```
 commission = fixedFee + (amount * percentage / 10_000)
 commission = max(commission, minCommission ?? 0)
@@ -103,6 +122,33 @@ commission = arrondi(commission)   // règle d'arrondi configurable
 - `fee` (frais payés par le client) et `commission` (gain de l'agent) sont **deux champs
   distincts**. Ne jamais les confondre ni les additionner.
 - Aucun tarif d'opérateur n'est codé en dur. Tous les barèmes viennent de la base.
+
+#### Mode « volume du jour » (`DAILY_VOLUME`, ex. Wave)
+
+Une seule commission **par point de vente, par opérateur et par jour** (Africa/Dakar, minuit
+à minuit) :
+
+```
+volume     = somme des montants des DEPOSIT + WITHDRAWAL validés du jour
+             (point de vente + opérateur ; annulations exclues ; autres types exclus)
+palier     = le palier du barème de l'opérateur qui contient ce volume
+commission du jour = commission de ce palier (0 si aucun palier)
+```
+
+- Le barème (`OperatorCommissionTier` : `minAmount`, `maxAmount` inclus, `commission`) est
+  **global**, saisi par l'Admin SaaS, identique pour toutes les organisations. Les
+  organisations le voient en lecture seule.
+- Paliers **contigus** : chaque palier commence au maximum du précédent + 1 (ni trou ni
+  chevauchement, contrôle bloquant). Seul le dernier peut être ouvert (`maxAmount` null).
+- Un nouveau barème **ferme** les paliers en vigueur (`validTo`) et en crée de nouveaux
+  (`validFrom`) : jamais de modification ni de suppression.
+- À la saisie, un dépôt ou un retrait de cet opérateur a `commission = 0`,
+  `commissionRuleId = null` et **n'est pas** marqué « sans règle ». Les frais client suivent
+  toujours les règles de l'organisation. Les autres types gardent leur règle éventuelle.
+- La commission du jour appartient au **point de vente** : elle n'est jamais répartie entre
+  agents ni entre types d'opération.
+- Calcul pur dans `src/server/commissions/daily.ts` et `daily-range.ts` (une période
+  entière, jour par jour) ; aucune duplication dans l'UI.
 
 ### Clôture
 
@@ -122,13 +168,17 @@ l'organisation quand elle est renseignée.
 
 ## 4. Modèle de données
 
-Entités principales : `Organization`, `Branch`, `Member`, `OperatorCatalog`, `OrgOperator`,
-`Account`, `Transaction`, `LedgerEntry`, `InternalMovement`, `CommissionRule`,
-`DailyClosing`, `ClosingLine`, `Subscription`, `Payment`, `AuditLog`.
+Entités principales : `Organization`, `Branch`, `Member`, `OperatorCatalog`, `OperatorLogo`,
+`OperatorCommissionTier`, `OrgOperator`, `Account`, `Transaction`, `LedgerEntry`,
+`InternalMovement`, `CommissionRule`, `DailyClosing`, `ClosingLine`, `Subscription`, `Payment`,
+`AuditLog`.
 
 Le schéma détaillé est en section 9 du cahier des charges. Règles :
 
-- `organizationId` sur **toutes** les tables métier, `CommissionRule` comprise.
+- `organizationId` sur **toutes** les tables métier, `CommissionRule` comprise. Seul le
+  catalogue commun, géré par l'Admin SaaS (`OperatorCatalog`, `OperatorLogo`,
+  `OperatorCommissionTier`), n'en a pas : lecture pour tous, écriture par l'Admin SaaS
+  uniquement.
 - Index sur `(organizationId, createdAt)` et `(organizationId, reference)` pour
   `Transaction`.
 - Migration Prisma pour tout changement de schéma ; jamais de modification manuelle en
@@ -156,7 +206,7 @@ src/
     auth/          # contexte session, helpers de rôle
     db/            # client Prisma + extension de filtrage par organisation
     ledger/        # effects.ts, postings.ts, balances.ts
-    commissions/   # resolve.ts, compute.ts
+    commissions/   # resolve.ts, compute.ts (par opération) ; daily.ts, daily-range.ts (volume du jour)
     closing/
     audit/
   lib/             # money.ts, phone.ts, dates.ts, format.ts
