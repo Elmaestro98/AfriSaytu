@@ -72,3 +72,20 @@ describe("changePlan, suspend, reactivate", () => {
     expect(reactivate(paid).ok).toBe(false)
   })
 })
+
+describe("the new subscription row", () => {
+  // Regression: the row read from the database carries its id; copying it failed on the primary key.
+  it("never carries anything but the four subscription fields", () => {
+    const stored = { ...paid, id: "sub_1", organizationId: "org_1", createdAt: NOW } as CurrentSubscription
+    const results = [
+      extendTrial({ ...stored, currentPeriodEnd: null }, 7, NOW),
+      applyPayment(stored, 1, NOW),
+      changePlan(stored, "PRO"),
+      suspend(stored),
+      reactivate({ ...stored, status: "SUSPENDED" }),
+    ]
+    for (const result of results) {
+      expect(Object.keys(next(result)).sort()).toEqual(["currentPeriodEnd", "plan", "status", "trialEndsAt"])
+    }
+  })
+})

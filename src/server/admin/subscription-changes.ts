@@ -20,6 +20,12 @@ export type Change = { ok: true; next: NextSubscription } | { ok: false; error: 
 
 const SUSPENDED = "Le compte est suspendu : réactivez-le d'abord."
 
+// Only the four fields of a subscription, whatever else the object read from the database holds
+// (its id above all: copying it would insert a second row with the same primary key).
+function fields(current: CurrentSubscription): NextSubscription {
+  return { plan: current.plan, status: current.status, trialEndsAt: current.trialEndsAt, currentPeriodEnd: current.currentPeriodEnd }
+}
+
 // A later end never goes back: extending counts from the current end when it is still ahead.
 function from(end: Date | null, now: Date): Date {
   return end && end > now ? end : now
@@ -31,7 +37,7 @@ export function extendTrial(current: CurrentSubscription, days: number, now: Dat
   }
   if (current.status === "SUSPENDED") return { ok: false, error: SUSPENDED }
   if (current.currentPeriodEnd) return { ok: false, error: "Ce client a déjà payé : enregistrez plutôt un paiement." }
-  return { ok: true, next: { ...current, status: "TRIAL", trialEndsAt: new Date(from(current.trialEndsAt, now).getTime() + days * DAY_MS) } }
+  return { ok: true, next: { ...fields(current), status: "TRIAL", trialEndsAt: new Date(from(current.trialEndsAt, now).getTime() + days * DAY_MS) } }
 }
 
 // A payment received by hand (Wave, Orange Money…) before online payment exists.
@@ -40,17 +46,17 @@ export function applyPayment(current: CurrentSubscription, months: number, now: 
     return { ok: false, error: `Entre 1 et ${MAX_PAID_MONTHS} mois.` }
   }
   if (current.status === "SUSPENDED") return { ok: false, error: SUSPENDED }
-  return { ok: true, next: { ...current, status: "ACTIVE", currentPeriodEnd: addCalendarMonths(from(current.currentPeriodEnd, now), months) } }
+  return { ok: true, next: { ...fields(current), status: "ACTIVE", currentPeriodEnd: addCalendarMonths(from(current.currentPeriodEnd, now), months) } }
 }
 
 export function changePlan(current: CurrentSubscription, plan: SubscriptionPlan): Change {
   if (plan === current.plan) return { ok: false, error: "Le client a déjà cette formule." }
-  return { ok: true, next: { ...current, plan } }
+  return { ok: true, next: { ...fields(current), plan } }
 }
 
 export function suspend(current: CurrentSubscription): Change {
   if (current.status === "SUSPENDED") return { ok: false, error: "Le compte est déjà suspendu." }
-  return { ok: true, next: { ...current, status: "SUSPENDED" } }
+  return { ok: true, next: { ...fields(current), status: "SUSPENDED" } }
 }
 
 // Back to the status the dates give: trial, paid, grace or read only (plans/lifecycle).
@@ -60,5 +66,5 @@ export function reactivate(current: CurrentSubscription): Change {
   }
   // The stored status only records the kind of period; the effective one comes from the dates.
   const status: SubscriptionStatus = current.currentPeriodEnd ? "ACTIVE" : "TRIAL"
-  return { ok: true, next: { ...current, status } }
+  return { ok: true, next: { ...fields(current), status } }
 }

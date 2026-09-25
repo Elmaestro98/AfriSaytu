@@ -63,7 +63,7 @@ export async function runAdminCommand(
     const current = await tx.subscription.findFirst({
       where: { organizationId },
       orderBy: { createdAt: "desc" },
-      select: { id: true, plan: true, status: true, trialEndsAt: true, currentPeriodEnd: true },
+      select: { plan: true, status: true, trialEndsAt: true, currentPeriodEnd: true },
     })
     if (!current) return { ok: false, error: "Ce client n'a pas d'abonnement." }
 
