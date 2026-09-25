@@ -39,8 +39,9 @@ describe("plan offer", () => {
   })
 
   it("gives 2 months free on a yearly payment", () => {
-    expect(yearlyPrice("PRO")).toBe(50_000)
-    expect(yearlyPrice("BASIC")).toBe(25_000)
+    expect(yearlyPrice("BASIC")).toBe(50_000)
+    expect(yearlyPrice("PRO")).toBe(70_000)
+    expect(yearlyPrice("BUSINESS")).toBe(100_000)
   })
 })
 
@@ -71,9 +72,10 @@ describe("historyStart", () => {
 
 describe("subscriptionPrice", () => {
   it("multiplies the monthly price, and gives 2 months free on a year", () => {
-    expect(subscriptionPrice("PRO", 1)).toBe(5_000)
-    expect(subscriptionPrice("PRO", 3)).toBe(15_000)
-    expect(subscriptionPrice("BASIC", 6)).toBe(15_000)
+    expect(subscriptionPrice("BASIC", 1)).toBe(5_000)
+    expect(subscriptionPrice("PRO", 1)).toBe(7_000)
+    expect(subscriptionPrice("PRO", 3)).toBe(21_000)
+    expect(subscriptionPrice("BASIC", 6)).toBe(30_000)
     expect(subscriptionPrice("BUSINESS", 12)).toBe(100_000)
   })
 

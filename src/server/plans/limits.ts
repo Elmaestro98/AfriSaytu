@@ -19,11 +19,11 @@ export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   BUSINESS: "Business",
 }
 
-// Monthly prices of the cahier des charges, section 13. Indicative: the final prices are set after
-// the pilot. A yearly payment gets 2 months free.
+// Monthly prices set by the owner on 2026-09-25 (the cahier des charges, section 13, only gave
+// indicative ones: 2 500 / 5 000 / 10 000). A yearly payment gets 2 months free.
 export const PLAN_MONTHLY_PRICE: Record<SubscriptionPlan, number> = {
-  BASIC: 2_500,
-  PRO: 5_000,
+  BASIC: 5_000,
+  PRO: 7_000,
   BUSINESS: 10_000,
 }
 
