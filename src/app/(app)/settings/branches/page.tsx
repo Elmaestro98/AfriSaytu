@@ -3,6 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { SummaryStat } from "@/components/business/summary-stat"
 import { PAGE } from "@/lib/layout"
 import { formatAmount, formatFCFA } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -16,15 +17,6 @@ import { PLAN_LABELS, PLAN_LIMITS, canAddBranch } from "@/server/plans/limits"
 
 import { BranchCard, branchTotals } from "./branch-card"
 import { NewBranchSheet } from "./new-branch-sheet"
-
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "warning" }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
-      <p className={cn("truncate font-heading text-xl font-extrabold tabular-nums", tone === "warning" && "text-brand-accent-strong")}>{value}</p>
-    </div>
-  )
-}
 
 // Branches of the organization (F-12): each one with its operator accounts and its cash drawer,
 // their theoretical balances and alert thresholds. Creating one is kept to the owner, within the plan.
@@ -58,10 +50,10 @@ export default async function BranchesPage() {
         <section aria-label="Synthèse" className="flex flex-col gap-4 rounded-2xl border bg-card p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
           <div className="grid grid-cols-3 gap-4 lg:gap-10">
             {/* The owner sees the plan usage; a manager, the branches they manage. */}
-            <Stat label="Points de vente"
+            <SummaryStat label="Points de vente"
               value={canCreate ? `${formatAmount(branchCount)}${maxBranches !== null ? ` / ${formatAmount(maxBranches)}` : ""}` : formatAmount(branches.length)} />
-            <Stat label="Trésorerie" value={formatFCFA(treasury)} />
-            <Stat label="Soldes bas" value={formatAmount(lowBalances)} tone={lowBalances > 0 ? "warning" : undefined} />
+            <SummaryStat label="Trésorerie" value={formatFCFA(treasury)} />
+            <SummaryStat label="Soldes bas" value={formatAmount(lowBalances)} tone={lowBalances > 0 ? "warning" : undefined} />
           </div>
           {canCreate &&
             (withinPlan ? (

@@ -48,17 +48,7 @@ export function InviteForm({ branches, roles }: InviteFormProps) {
   }
 
   return (
-    <form
-      noValidate
-      onSubmit={handleSubmit(submit)}
-      className="flex flex-col gap-5 rounded-xl border bg-card p-4"
-    >
-      <div>
-        <h2 className="font-heading text-xl font-bold">Inviter un membre</h2>
-        <p className="text-sm text-muted-foreground">
-          La personne reçoit un e-mail pour créer son accès.
-        </p>
-      </div>
+    <form noValidate onSubmit={handleSubmit(submit)} className="flex flex-col gap-5">
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="invite-email">Adresse e-mail</Label>
