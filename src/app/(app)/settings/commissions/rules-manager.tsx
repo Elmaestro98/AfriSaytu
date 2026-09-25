@@ -1,17 +1,20 @@
 "use client"
 
-import { Plus } from "lucide-react"
+import { Plus, TriangleAlert } from "lucide-react"
 import { useState, useTransition } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import type { RoundingMode } from "@/generated/prisma/enums"
-import { describeCommission, describeFee, describeRange } from "@/lib/format-rule"
+import { formatAmount } from "@/lib/money"
 import { TYPE_LABELS } from "@/lib/operation-types"
+import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query"
 import { toRuleFields } from "@/schemas/commission-rule"
 import type { RuleRow } from "@/server/commissions/manage"
 
 import { closeRuleAction } from "./actions"
 import { RuleForm, type OperatorOption } from "./rule-form"
+import { RuleGroups } from "./rule-groups"
 
 type RulesManagerProps = {
   rules: readonly RuleRow[]
@@ -19,31 +22,19 @@ type RulesManagerProps = {
   roundingMode: RoundingMode
 }
 
-type Mode = { kind: "list" } | { kind: "new" } | { kind: "edit"; rule: RuleRow }
+type Editor = { kind: "new" } | { kind: "edit"; rule: RuleRow } | null
 
-function groupByOperatorAndType(rules: readonly RuleRow[]) {
-  const groups = new Map<string, { title: string; color: string | null; rules: RuleRow[] }>()
-  for (const rule of rules) {
-    const key = `${rule.operatorId}:${rule.type}`
-    const group = groups.get(key) ?? { title: `${rule.operatorName} · ${TYPE_LABELS[rule.type]}`, color: rule.operatorColor, rules: [] }
-    group.rules.push(rule)
-    groups.set(key, group)
-  }
-  return [...groups.entries()]
-}
-
+// Commission rules in force: a summary with the "Nouvelle règle" action, the rules grouped by
+// operator, and the rule form in a side panel (bottom sheet on a phone), the list staying behind.
 export function RulesManager({ rules, operators, roundingMode }: RulesManagerProps) {
-  const [mode, setMode] = useState<Mode>({ kind: "list" })
+  const [editor, setEditor] = useState<Editor>(null)
   const [closingId, setClosingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const back = () => setMode({ kind: "list" })
+  const desktop = useMediaQuery(DESKTOP_QUERY)
 
-  if (mode.kind === "new") return <RuleForm operators={operators} roundingMode={roundingMode} onDone={back} />
-  if (mode.kind === "edit") {
-    const editing = { ruleId: mode.rule.id, values: toRuleFields(mode.rule) }
-    return <RuleForm operators={operators} roundingMode={roundingMode} editing={editing} onDone={back} />
-  }
+  const covered = new Set(rules.map((rule) => rule.operatorId))
+  const uncovered = operators.filter((operator) => !covered.has(operator.id))
 
   const close = (ruleId: string) => {
     setError(null)
@@ -56,77 +47,78 @@ export function RulesManager({ rules, operators, roundingMode }: RulesManagerPro
 
   return (
     <div className="flex flex-col gap-6">
-      {operators.length > 0 ? (
-        <Button type="button" className="h-12 text-base font-bold" onClick={() => setMode({ kind: "new" })}>
-          <Plus className="size-5" aria-hidden />
-          Nouvelle règle
-        </Button>
+      <section aria-label="Synthèse" className="flex flex-col gap-4 rounded-2xl border bg-card p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+        <div className="grid grid-cols-2 gap-4 lg:gap-10">
+          <div>
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Tranches en vigueur</p>
+            <p className="font-heading text-xl font-extrabold tabular-nums">{formatAmount(rules.length)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Opérateurs couverts</p>
+            <p className="font-heading text-xl font-extrabold tabular-nums">
+              {formatAmount(operators.length - uncovered.length)} <span className="text-base font-semibold text-muted-foreground">/ {formatAmount(operators.length)}</span>
+            </p>
+          </div>
+        </div>
+        {operators.length > 0 ? (
+          <Button type="button" className="h-11 gap-2 px-4 font-bold" onClick={() => setEditor({ kind: "new" })}>
+            <Plus className="size-5" aria-hidden />
+            Nouvelle règle
+          </Button>
+        ) : (
+          <p className="text-sm text-muted-foreground">Activez d&apos;abord un opérateur pour créer des règles.</p>
+        )}
+      </section>
+
+      {uncovered.length > 0 && rules.length > 0 && (
+        <p className="flex items-start gap-2 rounded-xl bg-brand-accent/15 p-3 text-sm">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-brand-accent-strong" aria-hidden />
+          <span>
+            <span className="font-semibold">{uncovered.map((operator) => operator.name).join(", ")}</span> n&apos;
+            {uncovered.length > 1 ? "ont" : "a"} aucune règle : leurs opérations auront une commission de 0 et seront signalées « sans règle ».
+          </span>
+        </p>
+      )}
+
+      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">{error}</p>}
+
+      {rules.length === 0 ? (
+        operators.length > 0 && (
+          <div className="rounded-2xl border border-dashed p-6 text-center">
+            <p className="font-semibold">Aucune règle pour l&apos;instant.</p>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground">
+              Sans règle, la commission d&apos;une opération vaut 0 et l&apos;opération est signalée « sans règle ». Créez une règle par
+              opérateur, type d&apos;opération et tranche de montant.
+            </p>
+          </div>
+        )
       ) : (
-        <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-          Activez d&apos;abord un opérateur pour créer des règles.
-        </p>
+        <RuleGroups rules={rules} closingId={closingId} isPending={isPending}
+          onEdit={(rule) => setEditor({ kind: "edit", rule })} onAskClose={setClosingId} onClose={close} />
       )}
 
-      {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
-          {error}
-        </p>
-      )}
-
-      {rules.length === 0 && operators.length > 0 && (
-        <p className="rounded-xl border border-dashed p-4 text-muted-foreground">
-          Aucune règle pour l&apos;instant. Sans règle, la commission d&apos;une opération vaut 0 et l&apos;opération est
-          signalée « sans règle ».
-        </p>
-      )}
-
-      {groupByOperatorAndType(rules).map(([key, group]) => (
-        <section key={key} className="flex flex-col gap-3">
-          <h2 className="flex items-center gap-2 font-heading text-lg font-bold">
-            <span aria-hidden className="size-3 rounded-full bg-primary" style={group.color ? { backgroundColor: group.color } : undefined} />
-            {group.title}
-          </h2>
-          <ul className="flex flex-col gap-3">
-            {group.rules.map((rule) => (
-              <li key={rule.id} className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
-                <p className="font-semibold tabular-nums">{describeRange(rule)}</p>
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Commission : </span>
-                  <span className="font-semibold">{describeCommission(rule)}</span>
-                </p>
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Frais client : </span>
-                  {describeFee(rule)}
-                </p>
-                {closingId === rule.id ? (
-                  <div className="mt-1 flex flex-col gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      Les prochaines opérations de cette tranche seront « sans règle ».
-                    </p>
-                    <div className="flex gap-3">
-                      <Button type="button" variant="destructive" className="h-11 flex-1" disabled={isPending} onClick={() => close(rule.id)}>
-                        Arrêter la règle
-                      </Button>
-                      <Button type="button" variant="outline" className="h-11 flex-1" disabled={isPending} onClick={() => setClosingId(null)}>
-                        Annuler
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-1 flex gap-3">
-                    <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => setMode({ kind: "edit", rule })}>
-                      Modifier
-                    </Button>
-                    <Button type="button" variant="ghost" className="h-11 flex-1" onClick={() => setClosingId(rule.id)}>
-                      Arrêter
-                    </Button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <Sheet open={editor !== null} onOpenChange={(open) => !open && setEditor(null)}>
+        <SheetContent side={desktop ? "right" : "bottom"}
+          className="max-h-[92svh] overflow-y-auto rounded-t-2xl lg:max-h-none lg:w-full lg:max-w-lg lg:rounded-none">
+          <SheetHeader>
+            <SheetTitle className="font-heading text-xl font-bold">
+              {editor?.kind === "edit" ? `${editor.rule.operatorName} · ${TYPE_LABELS[editor.rule.type]}` : "Nouvelle règle"}
+            </SheetTitle>
+            <SheetDescription>
+              {editor?.kind === "edit"
+                ? "La nouvelle version s'applique aux prochaines opérations."
+                : "Une commission par opérateur, type d'opération et tranche de montant."}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-6">
+            {editor?.kind === "new" && <RuleForm operators={operators} roundingMode={roundingMode} onDone={() => setEditor(null)} />}
+            {editor?.kind === "edit" && (
+              <RuleForm key={editor.rule.id} operators={operators} roundingMode={roundingMode}
+                editing={{ ruleId: editor.rule.id, values: toRuleFields(editor.rule) }} onDone={() => setEditor(null)} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

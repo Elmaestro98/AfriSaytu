@@ -1,4 +1,5 @@
 import { formatAmount } from "@/lib/money"
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import { toRuleFields, type CloseRuleInput, type ReplaceRuleInput, type RuleFieldsInput } from "@/schemas/commission-rule"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
@@ -113,18 +114,19 @@ export async function closeRule(ctx: ActorContext, input: CloseRuleInput, now = 
   return { ok: true }
 }
 
-export type RuleRow = RuleFieldsInput & { id: string; operatorName: string; operatorColor: string | null }
+export type RuleRow = RuleFieldsInput & { id: string; operatorName: string; operatorColor: string | null; operatorLogoSrc: string | null }
 
 export async function listRulesInForce(ctx: ActorContext, now = new Date()): Promise<RuleRow[]> {
   const rules = await ctx.db.commissionRule.findMany({
     where: inForceWhere(now),
     orderBy: [{ operator: { name: "asc" } }, { type: "asc" }, { minAmount: "asc" }],
-    include: { operator: { select: { name: true, color: true } } },
+    include: { operator: { select: { name: true, color: true, logo: { select: { updatedAt: true } } } } },
   })
   return rules.map((rule) => ({
     ...toRuleFields(rule),
     id: rule.id,
     operatorName: rule.operator.name,
     operatorColor: rule.operator.color,
+    operatorLogoSrc: operatorLogoSrc(rule.operatorId, rule.operator.logo?.updatedAt),
   }))
 }

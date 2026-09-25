@@ -58,16 +58,9 @@ export function RuleForm({ operators, roundingMode, editing, onDone }: RuleFormP
     })
   }
 
-  const fixedOperator = operators.find((operator) => operator.id === editing?.values.operatorId)
-
   return (
     <FormProvider {...form}>
-      <form noValidate onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-6 rounded-2xl border bg-card p-4">
-        <h2 className="font-heading text-xl font-bold">
-          {editing
-            ? `Modifier : ${fixedOperator?.name ?? "Opérateur"} · ${TYPE_LABELS[editing.values.type]}`
-            : "Nouvelle règle"}
-        </h2>
+      <form noValidate onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-6">
 
         {editing ? (
           <p className="text-sm text-muted-foreground">
