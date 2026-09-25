@@ -1,20 +1,17 @@
 import { formatShortDay } from "@/lib/dates"
-import { formatAmount, formatFCFA } from "@/lib/money"
+import { formatCompactAmount, formatFCFA } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { DayVolume } from "@/server/supervision/compute"
 
-// Rounds the top of the scale to a readable value (1, 2 or 5 × 10^n).
+const MIN_SCALE = 1_000
+
+// Rounds the top of the scale to a readable value (1, 2 or 5 × 10^n), never below 1 000 so that
+// half of it, the middle guide, is always a whole number of francs.
 function niceMax(value: number): number {
-  if (value <= 0) return 1
+  if (value <= MIN_SCALE) return MIN_SCALE
   const power = 10 ** Math.floor(Math.log10(value))
   const step = [1, 2, 5, 10].find((factor) => factor * power >= value) ?? 10
   return step * power
-}
-
-function compact(amount: number): string {
-  if (amount >= 1_000_000) return `${formatAmount(Math.round(amount / 100_000) / 10).replace(".", ",")} M`
-  if (amount >= 1_000) return `${formatAmount(Math.round(amount / 1_000))} k`
-  return formatAmount(amount)
 }
 
 type VolumeBarsProps = {
@@ -44,7 +41,7 @@ export function VolumeBars({ title, subtitle, days }: VolumeBarsProps) {
 
       <div className="flex gap-3">
         <div className="flex h-44 flex-col justify-between pb-6 text-right text-[11px] text-muted-foreground tabular-nums" aria-hidden>
-          {guides.map((ratio) => <span key={ratio}>{compact(max * ratio)}</span>)}
+          {guides.map((ratio) => <span key={ratio}>{formatCompactAmount(max * ratio)}</span>)}
         </div>
         <div className="relative flex-1">
           <div className="pointer-events-none absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between" aria-hidden>
