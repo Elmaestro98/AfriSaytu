@@ -8,7 +8,7 @@ describe("ledgerLabel", () => {
   it("names every kind of ledger line", () => {
     expect(ledgerLabel({ reason: "OPENING", transaction: null, movement: null })).toBe("Solde d'ouverture")
     expect(ledgerLabel({ reason: "TRANSACTION", transaction: deposit, movement: null })).toBe("Dépôt Wave")
-    expect(ledgerLabel({ reason: "CANCELLATION", transaction: deposit, movement: null })).toBe("Annulation : dépôt wave")
+    expect(ledgerLabel({ reason: "CANCELLATION", transaction: deposit, movement: null })).toBe("Annulation : dépôt Wave")
     expect(ledgerLabel({ reason: "ADJUSTMENT", transaction: null, movement: null })).toBe("Ajustement de clôture")
     expect(ledgerLabel({ reason: "CANCELLATION", transaction: null, movement: null })).toBe("Annulation d'ajustement (clôture rouverte)")
   })
