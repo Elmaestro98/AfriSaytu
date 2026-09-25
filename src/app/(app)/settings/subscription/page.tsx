@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { SummaryStat } from "@/components/business/summary-stat"
 import { formatLongDate } from "@/lib/dates"
 import { formatAmount, formatFCFA } from "@/lib/money"
 import { PAGE } from "@/lib/layout"
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
 import { configuredWaveLink } from "@/server/billing/wave"
-import { deadlineLine, statusLabel } from "@/server/plans/banner"
+import { statusLabel } from "@/server/plans/banner"
 import { PLAN_LABELS } from "@/server/plans/limits"
 import { SubscriptionAccessError, loadSubscriptionOverview } from "@/server/plans/overview"
 
@@ -16,6 +17,8 @@ import { PayWithWave } from "./pay-with-wave"
 import { PlanCards } from "./plan-cards"
 
 const PLANS = ["BASIC", "PRO", "BUSINESS"] as const
+
+const DEADLINE_LABEL: Partial<Record<string, string>> = { TRIAL: "Fin de l'essai", ACTIVE: "Prochaine échéance", PAST_DUE: "Lecture seule le" }
 
 const PAYMENT_STATUS = { PENDING: "En attente de confirmation", PAID: "Confirmé", FAILED: "Refusé" } as const
 
@@ -60,23 +63,19 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/set
   const selected = PLANS.find((value) => value === requested) ?? plan
   const waveLink = configuredWaveLink()
   const canPay = !pending && waveLink !== null
-  const deadline = deadlineLine(state, formatLongDate)
 
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader title="Mon abonnement" subtitle={`Formule ${PLAN_LABELS[plan]}`} backHref="/settings" />
       <main className={cn(PAGE, "gap-6")}>
-        <section className="grid gap-4 rounded-2xl border bg-card p-4 lg:grid-cols-2 lg:p-5">
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Statut</p>
-            <p className={cn("font-heading text-2xl font-extrabold",
-              state.access === "READ_ONLY" && "text-destructive", state.status === "PAST_DUE" && "text-brand-accent-strong")}>
-              {statusLabel(state)}
-            </p>
-            {deadline && <p className="text-sm">{deadline}</p>}
-            {state.status === "TRIAL" && <p className="text-sm text-muted-foreground">L&apos;essai donne accès à la formule {PLAN_LABELS[plan]}.</p>}
+        <section aria-label="Synthèse" className="flex flex-col rounded-2xl border bg-card">
+          <div className="grid gap-4 p-4 sm:grid-cols-3 lg:p-5">
+            <SummaryStat label="Statut" value={statusLabel(state)}
+              tone={state.access !== "FULL" ? "danger" : state.status === "PAST_DUE" ? "warning" : undefined} />
+            <SummaryStat label="Formule" value={state.status === "TRIAL" ? `${PLAN_LABELS[plan]} (essai)` : PLAN_LABELS[plan]} />
+            <SummaryStat label={DEADLINE_LABEL[state.status] ?? "Échéance"} value={state.deadline ? formatLongDate(state.deadline) : "—"} />
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 border-t p-4 sm:grid-cols-2 lg:p-5">
             <UsageBar label="Points de vente" used={usage.branches} limit={limits.maxBranches} />
             <UsageBar label="Utilisateurs actifs" used={usage.members} limit={limits.maxMembers} />
           </div>
