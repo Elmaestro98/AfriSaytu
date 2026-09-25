@@ -60,11 +60,67 @@ function SendFeeSwitch({ operatorId, fromUv, onError }: SendFeeSwitchProps) {
   )
 }
 
+type OperatorCardProps = {
+  operator: OrgOperatorRow
+  canToggle: boolean
+  confirming: boolean
+  isPending: boolean
+  onConfirm: (confirming: boolean) => void
+  onSetActive: (active: boolean) => void
+  onError: (message: string | null) => void
+}
+
+function OperatorCard({ operator, canToggle, confirming, isPending, onConfirm, onSetActive, onError }: OperatorCardProps) {
+  return (
+    <li className={cn("flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-xs", !operator.isActive && "bg-card/60")}>
+      <div className="flex items-center gap-3">
+        <OperatorBadge name={operator.name} color={operator.color} logoSrc={operator.logoSrc} className="size-12" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-heading text-lg font-bold">{operator.name}</p>
+          <p className="text-xs text-muted-foreground">{operator.isActive ? "Visible à la saisie" : "Non utilisé par l'entreprise"}</p>
+        </div>
+        <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-bold",
+          operator.isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+          {operator.isActive ? "Utilisé" : "Disponible"}
+        </span>
+      </div>
+
+      {canToggle && operator.isActive && <SendFeeSwitch operatorId={operator.operatorId} fromUv={operator.sendFeeFromUv} onError={onError} />}
+
+      {canToggle &&
+        (confirming ? (
+          <div className="flex flex-col gap-3 rounded-xl bg-muted p-3">
+            <p className="text-sm">
+              {operator.name} n&apos;apparaîtra plus à la saisie. Ses opérations restent dans l&apos;historique.
+            </p>
+            <div className="flex gap-3">
+              <Button type="button" variant="destructive" className="h-11 flex-1" disabled={isPending} onClick={() => onSetActive(false)}>
+                Désactiver
+              </Button>
+              <Button type="button" variant="outline" className="h-11 flex-1 bg-card" disabled={isPending} onClick={() => onConfirm(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : operator.isActive ? (
+          <Button type="button" variant="ghost" className="h-11 self-start text-muted-foreground" onClick={() => onConfirm(true)}>
+            Ne plus utiliser
+          </Button>
+        ) : (
+          <Button type="button" className="h-11" disabled={isPending} onClick={() => onSetActive(true)}>
+            Utiliser cet opérateur
+          </Button>
+        ))}
+    </li>
+  )
+}
+
 type OperatorListProps = {
   operators: readonly OrgOperatorRow[]
   canToggle: boolean
 }
 
+// The global catalogue split in two: the operators the organization uses, and the other ones.
 export function OperatorList({ operators, canToggle }: OperatorListProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -79,85 +135,33 @@ export function OperatorList({ operators, canToggle }: OperatorListProps) {
     })
   }
 
+  const groups = [
+    { title: "Utilisés par l'entreprise", rows: operators.filter((operator) => operator.isActive), empty: "Aucun opérateur activé : activez-en un ci-dessous." },
+    { title: "Disponibles", rows: operators.filter((operator) => !operator.isActive), empty: "Tous les opérateurs du catalogue sont utilisés." },
+  ]
+
   return (
-    <div className="flex flex-col gap-3">
-      {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
-          {error}
-        </p>
-      )}
-
-      <ul className="flex flex-col gap-3">
-        {operators.map((operator) => (
-          <li
-            key={operator.operatorId}
-            className="flex flex-col gap-3 rounded-2xl border border-l-4 bg-card p-4"
-            style={operator.color ? { borderLeftColor: operator.color } : undefined}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex min-w-0 items-center gap-3">
-                <OperatorBadge name={operator.name} color={operator.color} logoSrc={operator.logoSrc} className="size-11" />
-                <span className="truncate font-heading text-xl font-bold">{operator.name}</span>
-              </span>
-              <span
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-semibold",
-                  operator.isActive ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
-                )}
-              >
-                {operator.isActive ? "Activé" : "Désactivé"}
-              </span>
-            </div>
-
-            {canToggle && operator.isActive && (
-              <SendFeeSwitch operatorId={operator.operatorId} fromUv={operator.sendFeeFromUv} onError={setError} />
-            )}
-
-            {canToggle &&
-              (confirmingId === operator.operatorId ? (
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm text-muted-foreground">
-                    {operator.name} n&apos;apparaîtra plus à la saisie. Ses opérations restent dans
-                    l&apos;historique.
-                  </p>
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      className="h-11 flex-1"
-                      disabled={isPending}
-                      onClick={() => setActive(operator.operatorId, false)}
-                    >
-                      Désactiver
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-11 flex-1"
-                      disabled={isPending}
-                      onClick={() => setConfirmingId(null)}
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                </div>
-              ) : operator.isActive ? (
-                <Button type="button" variant="outline" className="h-11" onClick={() => setConfirmingId(operator.operatorId)}>
-                  Désactiver
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  className="h-11"
-                  disabled={isPending}
-                  onClick={() => setActive(operator.operatorId, true)}
-                >
-                  Activer
-                </Button>
+    <div className="flex flex-col gap-6">
+      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">{error}</p>}
+      {groups.map((group) => (
+        <section key={group.title} className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+            {group.title} ({group.rows.length})
+          </h2>
+          {group.rows.length === 0 ? (
+            <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">{group.empty}</p>
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {group.rows.map((operator) => (
+                <OperatorCard key={operator.operatorId} operator={operator} canToggle={canToggle}
+                  confirming={confirmingId === operator.operatorId} isPending={isPending}
+                  onConfirm={(confirming) => setConfirmingId(confirming ? operator.operatorId : null)}
+                  onSetActive={(active) => setActive(operator.operatorId, active)} onError={setError} />
               ))}
-          </li>
-        ))}
-      </ul>
+            </ul>
+          )}
+        </section>
+      ))}
     </div>
   )
 }
