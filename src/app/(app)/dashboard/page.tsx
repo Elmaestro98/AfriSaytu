@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
-import { Percent, Smartphone, Store, Users } from "lucide-react"
+import { History, Percent, Plus, Smartphone, Store, Users, Wallet } from "lucide-react"
+import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
@@ -43,6 +44,8 @@ export default async function DashboardPage() {
   }
 
   const organization = await ctx.db.organization.findFirst({ select: { name: true } })
+  const canEnter = authorize(ctx.actor, "transaction:create").allowed
+  const canView = authorize(ctx.actor, "transaction:view").allowed
   const canManageTeam = authorize(ctx.actor, "member:manage").allowed
   const canManageCatalog = authorize(ctx.actor, "catalog:manage").allowed
   const canManageRules = authorize(ctx.actor, "commissionRule:manage").allowed
@@ -55,11 +58,39 @@ export default async function DashboardPage() {
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6">
         <h1 className="font-heading text-3xl font-extrabold">Bonjour {firstName}</h1>
 
+        {canEnter && (
+          <Link
+            href="/operations/new"
+            className="flex h-16 items-center justify-center gap-2 rounded-2xl bg-brand-accent font-heading text-xl font-extrabold text-brand-accent-foreground shadow-md transition-transform active:scale-[0.98]"
+          >
+            <Plus className="size-6" aria-hidden />
+            Nouvelle opération
+          </Link>
+        )}
+
+        {canEnter && (
+          <SettingsLink
+            href="/cash"
+            icon={Wallet}
+            title="Caisse"
+            description="Soldes, approvisionnements, apports et retraits"
+          />
+        )}
+
+        {canView && (
+          <SettingsLink
+            href="/operations"
+            icon={History}
+            title="Dernières opérations"
+            description={ctx.actor.role === "AGENT" ? "Vos saisies, annulation sous 15 minutes" : "Consulter et annuler"}
+          />
+        )}
+
         <section className="rounded-2xl bg-primary p-5 text-primary-foreground">
           <p className="text-sm font-semibold tracking-wide text-brand-accent uppercase">Bientôt ici</p>
           <p className="mt-2 font-heading text-xl font-bold">Vos soldes, vos opérations du jour et vos commissions.</p>
           <p className="mt-1 text-primary-foreground/80">
-            La saisie des opérations arrive avec la prochaine mise à jour.
+            En attendant, les soldes de chaque compte sont visibles dans Points de vente.
           </p>
         </section>
 

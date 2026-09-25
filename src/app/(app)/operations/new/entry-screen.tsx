@@ -1,0 +1,161 @@
+"use client"
+
+import { CircleCheck, RotateCcw } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useMemo, useState, useTransition } from "react"
+
+import { NumericKeypad } from "@/components/business/numeric-keypad"
+import { Button } from "@/components/ui/button"
+import type { TransactionType } from "@/generated/prisma/enums"
+import { formatAmount, formatFCFA } from "@/lib/money"
+import { TYPE_LABELS } from "@/lib/operation-types"
+import { cn } from "@/lib/utils"
+import { newUuid } from "@/lib/uuid"
+import type { Sign } from "@/server/ledger/effects"
+import { computeEntry } from "@/server/operations/compute-entry"
+import type { EntryContext } from "@/server/operations/entry-context"
+
+import { createOperationAction } from "./actions"
+import { DirectionPicker, EntryDetailsSection, type EntryDetails } from "./entry-details"
+import { OperatorPicker, TypePicker } from "./entry-pickers"
+import { EntrySummary } from "./entry-summary"
+
+const QUICK_AMOUNTS = [5_000, 10_000, 25_000, 50_000]
+const NO_DIRECTION = { uv: 0 as Sign, cash: 0 as Sign }
+
+type Props = { context: EntryContext; branchId: string }
+
+export function EntryScreen({ context, branchId }: Props) {
+  const router = useRouter()
+  const branch = context.branches.find((item) => item.id === branchId) ?? context.branches[0]
+  const lastOperator = context.last?.branchId === branch.id ? context.last.operatorId : undefined
+  const [operatorId, setOperatorId] = useState(branch.operators.find((op) => op.id === lastOperator)?.id ?? branch.operators[0]?.id ?? "")
+  const [type, setType] = useState<TransactionType>(context.last?.type ?? "DEPOSIT")
+  const operator = branch.operators.find((item) => item.id === operatorId) ?? branch.operators[0]
+  const freshDetails = (nextType: TransactionType, nextOperator = operator): EntryDetails => ({
+    customerPhone: "", reference: "", note: "", fee: null, commission: null,
+    feeInCash: nextOperator?.effects[nextType].feeInCashDefault ?? false,
+  })
+  const [amount, setAmount] = useState(0)
+  const [details, setDetails] = useState<EntryDetails>(() => freshDetails(type))
+  const [manual, setManual] = useState(NO_DIRECTION)
+  const [key, setKey] = useState(() => newUuid())
+  const [feedback, setFeedback] = useState<{ kind: "ok" | "error"; text: string; warning?: string | null } | null>(null)
+  const [duplicate, setDuplicate] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  const result = useMemo(() => {
+    if (!operator || amount <= 0) return null
+    try {
+      return computeEntry(
+        { operatorId: operator.id, type, amount, fee: details.fee, commission: details.commission, feeInCash: details.feeInCash, manual: type === "OTHER" ? manual : null },
+        { rules: context.rules, roundingMode: context.roundingMode, effect: operator.effects[type], allowManualCommission: context.allowManualCommission, at: new Date() },
+        { uvAccountId: operator.uvAccountId, cashAccountId: branch.cashAccountId, uvBalance: operator.uvBalance, cashBalance: branch.cashBalance },
+      )
+    } catch {
+      return null // e.g. "Autre" without a direction yet
+    }
+  }, [operator, type, amount, details, manual, context, branch])
+
+  if (!operator) return null
+
+  const choose = (next: { operatorId?: string; type?: TransactionType }) => {
+    const nextType = next.type ?? type
+    const nextOperator = branch.operators.find((item) => item.id === (next.operatorId ?? operatorId)) ?? operator
+    setOperatorId(nextOperator.id)
+    setType(nextType)
+    setDetails({ ...details, fee: null, commission: null, feeInCash: nextOperator.effects[nextType].feeInCashDefault })
+    setDuplicate(false)
+  }
+
+  const submit = (confirmDuplicate: boolean) => {
+    setFeedback(null)
+    startTransition(async () => {
+      const response = await createOperationAction({
+        idempotencyKey: key, branchId: branch.id, operatorId: operator.id, type, amount, ...details,
+        manual: type === "OTHER" ? manual : null, clientCreatedAt: new Date().toISOString(), confirmDuplicate,
+      })
+      if (response.ok) {
+        setFeedback({ kind: "ok", text: response.message, warning: response.warning })
+        setAmount(0)
+        setDetails(freshDetails(type))
+        setManual(NO_DIRECTION)
+        setDuplicate(false)
+        setKey(newUuid())
+        router.refresh() // reload balances for the next operation
+      } else {
+        setDuplicate(response.duplicate === true)
+        setFeedback({ kind: "error", text: response.error })
+      }
+    })
+  }
+
+  const blocked = context.blockNegativeBalance && (result?.goesNegative.length ?? 0) > 0
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-4">
+        {feedback && (
+          <div role={feedback.kind === "ok" ? "status" : "alert"}
+            className={cn("rounded-xl p-3 text-sm font-semibold", feedback.kind === "ok" ? "bg-accent text-accent-foreground" : "bg-destructive/10 text-destructive")}>
+            <p className="flex items-start gap-2">
+              {feedback.kind === "ok" && <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />}
+              {feedback.text}
+            </p>
+            {feedback.warning && <p className="mt-1 font-normal">{feedback.warning}</p>}
+            {feedback.kind === "ok" && (
+              <Link href="/operations" className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
+                Voir ou annuler
+              </Link>
+            )}
+            {duplicate && (
+              <div className="mt-3 flex gap-2">
+                <Button type="button" className="h-11 flex-1" disabled={isPending} onClick={() => submit(true)}>Enregistrer quand même</Button>
+                <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => { setDuplicate(false); setFeedback(null) }}>Annuler</Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <OperatorPicker operators={branch.operators} value={operator.id} onChange={(id) => choose({ operatorId: id })} />
+        <TypePicker value={type} onChange={(nextType) => choose({ type: nextType })} />
+        {type === "OTHER" && <DirectionPicker value={manual} operatorName={operator.name} onChange={setManual} />}
+
+        <section className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+          <div className="flex h-16 items-center justify-between rounded-xl bg-muted px-4">
+            <p className="font-heading text-4xl font-extrabold tabular-nums" aria-live="polite">
+              {formatAmount(amount)} <span className="text-lg font-bold text-primary">FCFA</span>
+            </p>
+            {amount > 0 && (
+              <button type="button" aria-label="Remettre le montant à zéro" onClick={() => setAmount(0)} className="flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-card">
+                <RotateCcw className="size-5" aria-hidden />
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {QUICK_AMOUNTS.map((quick) => (
+              <button key={quick} type="button" onClick={() => setAmount(quick)}
+                className={cn("h-11 rounded-lg text-sm font-bold tabular-nums", amount === quick ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                {formatAmount(quick)}
+              </button>
+            ))}
+          </div>
+          <NumericKeypad value={amount} onValueChange={setAmount} />
+        </section>
+
+        <EntryDetailsSection value={details} onChange={setDetails} computedFee={result?.quote.fee ?? 0}
+          computedCommission={result?.quote.commission ?? 0} allowManualCommission={context.allowManualCommission} />
+        <EntrySummary result={result} operatorName={operator.name} blockNegativeBalance={context.blockNegativeBalance} />
+      </div>
+
+      <div className="sticky bottom-0 border-t bg-card/95 backdrop-blur">
+        <div className="mx-auto w-full max-w-md p-4">
+          <Button type="button" className="h-14 w-full text-lg font-bold" disabled={isPending || !result || blocked || duplicate} onClick={() => submit(false)}>
+            {isPending ? "Enregistrement…" : amount > 0 ? `Valider ${TYPE_LABELS[type].toLowerCase()} · ${formatFCFA(amount)}` : "Saisissez un montant"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
