@@ -17,6 +17,7 @@ describe("toXlsx", () => {
         fee: 0,
         commission: 1_500,
         noRule: false,
+  dailyCommission: false,
         customerPhone: null,
         reference: null,
         status: "VALID",

@@ -18,10 +18,9 @@ export type DailyCommissions = { rows: DailyCommissionRow[]; total: number }
 const NONE: DailyCommissions = { rows: [], total: 0 }
 
 // Today's commission of every daily-volume operator, per branch (each branch has its own agent
-// account, so its own total and tier). Owner: every branch; manager: their branches. Agents see
-// their own operations only (cahier 5), not a branch total: nothing for them.
+// account, so its own total and tier). Owner: every branch; manager and agent: their branches.
+// It is the branch's commission: an agent sees it for their branch, not as their own.
 export async function loadDailyCommissions(ctx: ActorContext, now = new Date()): Promise<DailyCommissions> {
-  if (ctx.actor.role === "AGENT") return NONE
   const branchScope = ctx.actor.role === "OWNER" ? {} : { branchId: { in: [...ctx.actor.branchIds] } }
 
   // UV accounts of daily-volume operators the organization uses: one row each, even at 0 today.

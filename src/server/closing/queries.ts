@@ -1,6 +1,9 @@
 import { LedgerReason } from "@/generated/prisma/enums"
+import { startOfDakarDay } from "@/lib/dates"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
+import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
+import { loadDailyRange, sumBy } from "@/server/commissions/daily-range"
 import type { ClosingAccount } from "@/server/closing/compute"
 import type { TenantClient } from "@/server/db/tenant"
 import { getBalances } from "@/server/ledger/balances"
@@ -106,6 +109,16 @@ export async function loadClosingContext(ctx: ActorContext, requestedBranchId?: 
     }),
   ])
 
+  // Daily-volume operators: the commission of each Dakar day the period touches, computed on the
+  // whole day's volume of the branch (a day belongs to the branch, even if closed in two goes).
+  const firstDaily = await ctx.db.transaction.aggregate({
+    where: { branchId: branch.id, closingId: null, status: "VALID", type: { in: [...DAILY_VOLUME_TYPES] }, operator: { commissionMode: "DAILY_VOLUME" } },
+    _min: { createdAt: true },
+  })
+  const openedDay = firstDaily._min.createdAt
+  const dailyDays = openedDay ? await loadDailyRange(ctx, { branchIds: [branch.id], from: startOfDakarDay(openedDay), to: new Date() }) : []
+  const dailyByOperator = sumBy(dailyDays, (day) => day.operatorId)
+
   const operators = await ctx.db.operatorCatalog.findMany({
     where: { id: { in: recap.map((row) => row.operatorId) } },
     select: { id: true, name: true, color: true },
@@ -127,7 +140,7 @@ export async function loadClosingContext(ctx: ActorContext, requestedBranchId?: 
         color: operatorById.get(row.operatorId)?.color ?? null,
         count: row._count._all,
         volume: row._sum.amount ?? 0,
-        commission: row._sum.commission ?? 0,
+        commission: (row._sum.commission ?? 0) + (dailyByOperator.get(row.operatorId) ?? 0),
       }))
       .sort((a, b) => a.operatorName.localeCompare(b.operatorName, "fr")),
     history: closings.map((closing) => ({

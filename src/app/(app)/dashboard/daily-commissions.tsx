@@ -18,13 +18,15 @@ function hint(row: DailyCommissionRow): string {
 
 // Operators paid on the day's total (e.g. Wave): per branch, today's volume of deposits and
 // withdrawals, the commission of the tier reached, and what the next tier still needs.
-export function DailyCommissionsPanel({ daily, showBranch }: { daily: DailyCommissions; showBranch: boolean }) {
+export function DailyCommissionsPanel({ daily, showBranch, forAgent }: { daily: DailyCommissions; showBranch: boolean; forAgent: boolean }) {
   return (
     <section aria-labelledby="daily-commissions" className="flex flex-col gap-3 rounded-2xl border bg-card p-4 lg:p-5">
       <div className="flex items-baseline justify-between gap-3">
         <div>
-          <h2 id="daily-commissions" className="font-heading text-lg font-bold">Commissions du jour</h2>
-          <p className="text-sm text-muted-foreground">Sur le total des dépôts et retraits de la journée, selon le barème de l&apos;opérateur.</p>
+          <h2 id="daily-commissions" className="font-heading text-lg font-bold">{forAgent ? "Commissions du jour du point de vente" : "Commissions du jour"}</h2>
+          <p className="text-sm text-muted-foreground">
+            Sur le total des dépôts et retraits de la journée{forAgent ? ", tous agents confondus" : ""}, selon le barème de l&apos;opérateur.
+          </p>
         </div>
         <p className="shrink-0 font-heading text-xl font-extrabold text-primary tabular-nums">+{formatFCFA(daily.total)}</p>
       </div>

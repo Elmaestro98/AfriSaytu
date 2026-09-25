@@ -16,6 +16,7 @@ export type ExportSource = {
   fee: number
   commission: number
   noRule: boolean
+  dailyCommission: boolean // earns via the day's total of the branch (daily-volume operator)
   customerPhone: string | null
   reference: string | null
   status: "VALID" | "CANCELLED"
@@ -33,6 +34,7 @@ export type ExportRecord = {
   amount: number
   fee: number
   commission: number
+  commissionMode: string
   withoutRule: string
   customer: string
   reference: string
@@ -50,6 +52,7 @@ export const EXPORT_COLUMNS: { key: Exclude<keyof ExportRecord, "date">; header:
   { key: "amount", header: "Montant (FCFA)", numeric: true, width: 16 },
   { key: "fee", header: "Frais client (FCFA)", numeric: true, width: 18 },
   { key: "commission", header: "Commission (FCFA)", numeric: true, width: 18 },
+  { key: "commissionMode", header: "Mode de commission", width: 18 },
   { key: "withoutRule", header: "Sans règle", width: 12 },
   { key: "customer", header: "N° client", width: 16 },
   { key: "reference", header: "Référence", width: 18 },
@@ -80,6 +83,7 @@ export function toExportRecord(source: ExportSource, maskCustomer: boolean): Exp
     amount: source.amount,
     fee: source.fee,
     commission: source.status === "CANCELLED" ? 0 : source.commission,
+    commissionMode: source.dailyCommission ? "Du jour" : "Par opération",
     withoutRule: source.noRule ? "Oui" : "Non",
     customer: phone ? (maskCustomer ? maskPhone(phone) : formatPhone(phone)) : "",
     reference: source.reference ?? "",

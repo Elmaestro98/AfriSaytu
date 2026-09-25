@@ -55,7 +55,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
         </nav>
 
         <section aria-label="Indicateurs" className="grid gap-3 sm:grid-cols-2 lg:gap-4 xl:grid-cols-4">
-          <KpiCard label={isAgent ? "Mes commissions" : "Commissions"} value={`+${formatFCFA(stats.commission)}`} icon={Coins} tone="primary"
+          <KpiCard label={isAgent && stats.dailyCommission === 0 ? "Mes commissions" : "Commissions"} value={`+${formatFCFA(stats.commission)}`} icon={Coins} tone="primary"
             change={{ value: stats.commissionChange, label: comparedTo }} />
           <KpiCard label="Volume" value={formatFCFA(stats.volume)} icon={TrendingUp}
             change={{ value: stats.volumeChange, label: comparedTo }} />
@@ -65,6 +65,14 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
             <span className="text-xs text-muted-foreground">par opération</span>
           </KpiCard>
         </section>
+
+        {stats.dailyCommission > 0 && (
+          <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+            Dont <span className="font-bold">{formatFCFA(stats.dailyCommission)}</span> de commissions sur le volume du jour
+            {isAgent ? " de votre point de vente (tous agents confondus)" : ""}. Elles appartiennent au point de vente : les répartitions par type
+            {isAgent ? "" : " et par agent"} ci-dessous ne les incluent pas.
+          </p>
+        )}
 
         <DailyChart days={stats.daily} />
 

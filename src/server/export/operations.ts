@@ -3,6 +3,7 @@ import type { HistoryFilters } from "@/lib/history-filters"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { recordAudit, singleBranch } from "@/server/audit/log"
+import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
 import { toCsv, toExportRecord } from "@/server/export/operations-file"
 import { toXlsx } from "@/server/export/operations-xlsx"
 import { buildHistoryWhere } from "@/server/operations/history-where"
@@ -56,7 +57,7 @@ export async function exportOperations(
       status: true,
       cancelReason: true,
       note: true,
-      operator: { select: { name: true } },
+      operator: { select: { name: true, commissionMode: true } },
       branch: { select: { name: true } },
       member: { select: { name: true } },
     },
@@ -70,6 +71,7 @@ export async function exportOperations(
       {
         ...operation,
         operatorName: operation.operator.name,
+        dailyCommission: operation.operator.commissionMode === "DAILY_VOLUME" && DAILY_VOLUME_TYPES.includes(operation.type) && operation.commission === 0,
         branchName: operation.branch.name,
         authorName: operation.member.name,
       },

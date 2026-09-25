@@ -67,6 +67,7 @@ export default async function DashboardPage() {
   const canEnter = can("transaction:create")
   const canSettings = can("catalog:manage") || can("commissionRule:manage") || can("member:manage")
   const firstName = ctx.memberName.split(" ")[0]
+  const isAgent = ctx.actor.role === "AGENT"
 
   return (
     <div className="flex flex-1 flex-col">
@@ -106,8 +107,9 @@ export default async function DashboardPage() {
             change={{ value: today.volumeChange, label: "vs hier" }} />
           {/* Per-operation commissions + the day's commissions of daily-volume operators. Yesterday is
               only compared when there is no daily-volume commission (a day in progress vs a full day). */}
-          <KpiCard label="Commissions" value={`+${formatFCFA(today.commission + daily.total)}`} icon={Coins}
-            change={{ value: daily.rows.length > 0 ? null : today.commissionChange, label: "vs hier" }} />
+          {/* An agent's card keeps their own operations; the branch's daily commissions are below. */}
+          <KpiCard label="Commissions" value={`+${formatFCFA(today.commission + (isAgent ? 0 : daily.total))}`} icon={Coins}
+            change={{ value: daily.rows.length > 0 && !isAgent ? null : today.commissionChange, label: "vs hier" }} />
           <KpiCard label="Opérations" value={String(today.count)} icon={Activity}>
             <span className="text-xs text-muted-foreground">
               {today.deposits} dépôt{today.deposits > 1 ? "s" : ""} · {today.withdrawals} retrait{today.withdrawals > 1 ? "s" : ""}
@@ -118,7 +120,7 @@ export default async function DashboardPage() {
           </KpiCard>
         </section>
 
-        {daily.rows.length > 0 && <DailyCommissionsPanel daily={daily} showBranch={today.showBranch} />}
+        {daily.rows.length > 0 && <DailyCommissionsPanel daily={daily} showBranch={today.showBranch} forAgent={isAgent} />}
 
         <div className="grid gap-6 xl:grid-cols-3 xl:items-start">
           <div className="xl:col-span-2">

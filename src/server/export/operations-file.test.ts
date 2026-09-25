@@ -12,6 +12,7 @@ const source: ExportSource = {
   fee: 0,
   commission: 250,
   noRule: false,
+  dailyCommission: false,
   customerPhone: "771234567",
   reference: "WV-892",
   status: "VALID",
@@ -45,7 +46,7 @@ describe("toCsv", () => {
     const [header, line] = csv.slice(1).split("\r\n")
     expect(header.split(";")).toHaveLength(EXPORT_COLUMNS.length)
     expect(header).toContain("Opérateur")
-    expect(line).toBe("25/09/2026 14:32;Kiosque Médina;Moussa Diop;Wave;Dépôt;25000;0;250;Non;77 123 45 67;WV-892;Validée;;")
+    expect(line).toBe("25/09/2026 14:32;Kiosque Médina;Moussa Diop;Wave;Dépôt;25000;0;250;Par opération;Non;77 123 45 67;WV-892;Validée;;")
   })
 
   it("quotes cells containing separators, quotes or line breaks", () => {
@@ -60,5 +61,12 @@ describe("toCsv", () => {
 
   it("exports only the header when there is nothing", () => {
     expect(toCsv([]).split("\r\n").filter(Boolean)).toHaveLength(1)
+  })
+})
+
+describe("commission mode column", () => {
+  it("tells an operation paid on the day's total from one paid per operation", () => {
+    expect(toExportRecord({ ...source, commission: 0, dailyCommission: true }, false).commissionMode).toBe("Du jour")
+    expect(toExportRecord(source, false).commissionMode).toBe("Par opération")
   })
 })

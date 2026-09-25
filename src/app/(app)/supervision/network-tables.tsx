@@ -31,7 +31,10 @@ export function AgentsTable({ network, historyPeriod }: { network: Network; hist
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="font-heading text-xl font-bold">Performance des agents</h2>
-        <p className="text-sm text-muted-foreground">Volume, commissions et écarts des clôtures qu&apos;ils ont validées</p>
+        <p className="text-sm text-muted-foreground">
+          Volume, commissions par opération et écarts des clôtures qu&apos;ils ont validées. Les commissions sur le volume du jour
+          appartiennent au point de vente : elles sont dans le tableau des points de vente.
+        </p>
       </div>
       {network.agents.length === 0 ? (
         <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">Aucune opération sur la période.</p>

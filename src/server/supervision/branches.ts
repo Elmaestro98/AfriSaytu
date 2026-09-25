@@ -1,6 +1,7 @@
 import { balanceLevel } from "@/lib/balance-level"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
+import { loadDailyRange, sumBy } from "@/server/commissions/daily-range"
 import { buildAlerts, STALE_HOURS, type Alert } from "@/server/dashboard/alerts"
 import { getBalances } from "@/server/ledger/balances"
 import { periodRanges, type SupervisionPeriod } from "@/server/supervision/compute"
@@ -26,7 +27,8 @@ export async function loadBranches(ctx: ActorContext, scope: string[] | null, pe
   const branchWhere = { isActive: true, ...(scope ? { id: { in: scope } } : {}) }
   const inPeriod = { status: "VALID" as const, createdAt: { gte: current.from, lte: current.to }, ...(scope ? { branchId: { in: scope } } : {}) }
 
-  const [branches, byBranch, noRuleCount, accounts, periodClosings] = await Promise.all([
+  const [dailyDays, branches, byBranch, noRuleCount, accounts, periodClosings] = await Promise.all([
+    loadDailyRange(ctx, { branchIds: scope, from: current.from, to: current.to }, now),
     ctx.db.branch.findMany({
       where: branchWhere,
       orderBy: { name: "asc" },
@@ -54,6 +56,7 @@ export async function loadBranches(ctx: ActorContext, scope: string[] | null, pe
     return { ...account, balance, level: balanceLevel(balance, account.alertThreshold) }
   })
   const totalsOf = new Map(byBranch.map((row) => [row.branchId, row]))
+  const dailyByBranch = sumBy(dailyDays, (day) => day.branchId)
   const difference = (lines: readonly { difference: number }[]) => lines.reduce((sum, line) => sum + line.difference, 0)
 
   const rows: BranchRow[] = branches.map((branch) => {
@@ -66,7 +69,7 @@ export async function loadBranches(ctx: ActorContext, scope: string[] | null, pe
       name: branch.name,
       count: totals?._count._all ?? 0,
       volume: totals?._sum.amount ?? 0,
-      commission: totals?._sum.commission ?? 0,
+      commission: (totals?._sum.commission ?? 0) + (dailyByBranch.get(branch.id) ?? 0),
       uv: own.filter((account) => account.kind === "OPERATOR").reduce((sum, account) => sum + account.balance, 0),
       cash: own.filter((account) => account.kind === "CASH").reduce((sum, account) => sum + account.balance, 0),
       lowBalances: own.filter((account) => account.level.low).length,
