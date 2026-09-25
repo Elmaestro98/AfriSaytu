@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { PLAN_MONTHLY_PRICE, canAddBranch, canAddMember, yearlyPrice } from "@/server/plans/limits"
+import { PLAN_MONTHLY_PRICE, canAddBranch, canAddMember, historyStart, yearlyPrice } from "@/server/plans/limits"
 
 describe("branch limits", () => {
   it("allows one branch on Basic and Pro", () => {
@@ -41,5 +41,30 @@ describe("plan offer", () => {
   it("gives 2 months free on a yearly payment", () => {
     expect(yearlyPrice("PRO")).toBe(50_000)
     expect(yearlyPrice("BASIC")).toBe(25_000)
+  })
+})
+
+describe("historyStart", () => {
+  const now = new Date("2026-09-25T15:00:00.000Z")
+
+  it("shows 3 months on Basic, from Dakar midnight", () => {
+    expect(historyStart("BASIC", now)).toEqual(new Date("2026-06-25T00:00:00.000Z"))
+  })
+
+  it("shows 24 months on Pro, across years", () => {
+    expect(historyStart("PRO", now)).toEqual(new Date("2024-09-25T00:00:00.000Z"))
+  })
+
+  it("shows everything on Business", () => {
+    expect(historyStart("BUSINESS", now)).toBeNull()
+  })
+
+  it("clamps to the end of a shorter month", () => {
+    expect(historyStart("BASIC", new Date("2026-05-31T09:00:00.000Z"))).toEqual(new Date("2026-02-28T00:00:00.000Z"))
+    expect(historyStart("BASIC", new Date("2028-05-31T09:00:00.000Z"))).toEqual(new Date("2028-02-29T00:00:00.000Z"))
+  })
+
+  it("crosses the start of the year", () => {
+    expect(historyStart("BASIC", new Date("2027-01-15T23:59:00.000Z"))).toEqual(new Date("2026-10-15T00:00:00.000Z"))
   })
 })

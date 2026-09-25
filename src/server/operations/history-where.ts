@@ -55,12 +55,14 @@ export function searchWhere(q: string): Prisma.TransactionWhereInput {
   }
 }
 
-export function buildHistoryWhere(filters: HistoryFilters, actor: Actor, now: Date): Prisma.TransactionWhereInput {
+// `since`: start of the history the plan shows (plans/limits historyStart), null = everything.
+export function buildHistoryWhere(filters: HistoryFilters, actor: Actor, now: Date, since: Date | null = null): Prisma.TransactionWhereInput {
   const conditions: Prisma.TransactionWhereInput[] = [
     visibilityWhere(actor),
     periodWhere(filters.period, now),
     searchWhere(filters.q),
   ]
+  if (since) conditions.push({ createdAt: { gte: since } })
   if (filters.branch) conditions.push({ branchId: filters.branch })
   if (filters.agent && actor.role !== "AGENT") conditions.push({ memberId: filters.agent })
   if (filters.operator) conditions.push({ operatorId: filters.operator })

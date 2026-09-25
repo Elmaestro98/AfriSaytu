@@ -6,7 +6,7 @@ import { recordAudit, singleBranch } from "@/server/audit/log"
 import { toCsv, toExportRecord } from "@/server/export/operations-file"
 import { toXlsx } from "@/server/export/operations-xlsx"
 import { buildHistoryWhere } from "@/server/operations/history-where"
-import { getCurrentPlan, getSubscriptionState } from "@/server/plans/current"
+import { getCurrentPlan, getHistoryRetention, getSubscriptionState } from "@/server/plans/current"
 import { SUSPENDED_ERROR } from "@/server/plans/lifecycle"
 
 export const MAX_EXPORT_ROWS = 50_000
@@ -38,8 +38,10 @@ export async function exportOperations(
     return { ok: false, status: 403, error: "L'export est disponible à partir de la formule Pro." }
   }
 
+  // The file never holds more than the screen shows: same plan retention.
+  const retention = await getHistoryRetention(ctx, now)
   const operations = await ctx.db.transaction.findMany({
-    where: buildHistoryWhere(filters, ctx.actor, now),
+    where: buildHistoryWhere(filters, ctx.actor, now, retention?.since ?? null),
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: MAX_EXPORT_ROWS + 1,
     select: {

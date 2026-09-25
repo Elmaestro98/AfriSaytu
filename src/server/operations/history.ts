@@ -2,6 +2,7 @@ import type { HistoryFilters } from "@/lib/history-filters"
 import type { ActorContext } from "@/server/auth/actor"
 import { buildHistoryWhere, visibilityWhere } from "@/server/operations/history-where"
 import { OPERATION_SELECT, toOperationRow, type OperationRow } from "@/server/operations/queries"
+import { getHistoryRetention, type HistoryRetention } from "@/server/plans/current"
 
 export type HistorySummary = {
   total: number // operations matching the filters (valid and cancelled)
@@ -14,11 +15,13 @@ export type HistoryResult = {
   rows: OperationRow[]
   summary: HistorySummary
   hasMore: boolean
+  retention: HistoryRetention | null // older operations are hidden by the plan
 }
 
 // Search of the history (F-50). Sums count valid operations only: a cancelled one moved nothing.
 export async function searchHistory(ctx: ActorContext, filters: HistoryFilters, now = new Date()): Promise<HistoryResult> {
-  const where = buildHistoryWhere(filters, ctx.actor, now)
+  const retention = await getHistoryRetention(ctx, now)
+  const where = buildHistoryWhere(filters, ctx.actor, now, retention?.since ?? null)
   const validWhere = { AND: [where, { status: "VALID" as const }] }
 
   const [operations, total, totals] = await Promise.all([
@@ -35,6 +38,7 @@ export async function searchHistory(ctx: ActorContext, filters: HistoryFilters, 
   return {
     rows: operations.slice(0, filters.limit).map((operation) => toOperationRow(ctx, operation, now)),
     hasMore: operations.length > filters.limit,
+    retention,
     summary: {
       total,
       validCount: totals._count._all,

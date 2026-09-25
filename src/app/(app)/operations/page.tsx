@@ -3,7 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
-import { dayKey, formatDayLabel } from "@/lib/dates"
+import { dayKey, formatDayLabel, formatLongDate } from "@/lib/dates"
 import { PAGE_SIZE, PERIOD_LABELS, historyQueryString, parseHistoryFilters } from "@/lib/history-filters"
 import { PAGE } from "@/lib/layout"
 import { formatFCFA } from "@/lib/money"
@@ -65,6 +65,19 @@ export default async function HistoryPage({ searchParams }: PageProps<"/operatio
         </section>
 
         <FilterBar key={historyQueryString(filters)} filters={filters} options={options} />
+
+        {/* F-61: a plan limit invites to upgrade instead of hiding data silently. */}
+        {result.retention && filters.period === "all" && (
+          <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+            Votre formule {result.retention.planLabel} affiche les {result.retention.months} derniers mois (depuis le {formatLongDate(result.retention.since)}).
+            Les opérations plus anciennes sont conservées.{" "}
+            {ctx.actor.role === "OWNER" ? (
+              <Link href="/settings/subscription" className="font-semibold underline underline-offset-4">Passer à une formule supérieure</Link>
+            ) : (
+              "Le propriétaire peut passer à une formule supérieure pour les revoir."
+            )}
+          </p>
+        )}
 
         {canExport && result.rows.length > 0 && (
           <div className="flex justify-end">

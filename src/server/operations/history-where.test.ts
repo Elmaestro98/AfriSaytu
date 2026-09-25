@@ -66,3 +66,15 @@ describe("buildHistoryWhere", () => {
     expect(where.AND).toEqual([{ memberId: "m1" }, { operatorId: "op" }, { type: "SEND" }, { status: "VALID" }])
   })
 })
+
+describe("buildHistoryWhere with the plan retention", () => {
+  it("hides what is older than the plan shows, on top of the other filters", () => {
+    const since = new Date("2026-06-25T00:00:00.000Z")
+    const where = buildHistoryWhere({ ...DEFAULT_FILTERS, period: "all" }, agent, NOW, since)
+    expect(where).toEqual({ AND: [{ memberId: "agent" }, { createdAt: { gte: since } }] })
+  })
+
+  it("adds nothing when the plan shows everything", () => {
+    expect(buildHistoryWhere({ ...DEFAULT_FILTERS, period: "all" }, owner, NOW, null)).toEqual({ AND: [] })
+  })
+})
