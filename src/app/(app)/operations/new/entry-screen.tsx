@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import type { TransactionType } from "@/generated/prisma/enums"
 import { formatAmount, formatFCFA } from "@/lib/money"
 import { TYPE_LABELS } from "@/lib/operation-types"
+import { applyAmountKey } from "@/lib/amount-keys"
+import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { newUuid } from "@/lib/uuid"
 import type { Sign } from "@/server/ledger/effects"
@@ -20,6 +22,7 @@ import { createOperationAction } from "./actions"
 import { DirectionPicker, EntryDetailsSection, type EntryDetails } from "./entry-details"
 import { OperatorPicker, TypePicker } from "./entry-pickers"
 import { EntrySummary } from "./entry-summary"
+import { useAmountKeyboard } from "./use-amount-keyboard"
 
 const QUICK_AMOUNTS = [5_000, 10_000, 25_000, 50_000]
 const NO_DIRECTION = { uv: 0 as Sign, cash: 0 as Sign }
@@ -58,7 +61,7 @@ export function EntryScreen({ context, branchId }: Props) {
     }
   }, [operator, type, amount, details, manual, context, branch])
 
-  if (!operator) return null
+  // The page only shows this screen for a branch with at least one operator: `operator` exists.
 
   const choose = (next: { operatorId?: string; type?: TransactionType }) => {
     const nextType = next.type ?? type
@@ -91,69 +94,99 @@ export function EntryScreen({ context, branchId }: Props) {
     })
   }
 
-  const blocked = context.blockNegativeBalance && (result?.goesNegative.length ?? 0) > 0
+  // Typing the next amount starts a new operation: the previous confirmation goes away.
+  const changeAmount = (value: number) => {
+    setAmount(value)
+    if (feedback?.kind === "ok") setFeedback(null)
+  }
 
+  const blocked = context.blockNegativeBalance && (result?.goesNegative.length ?? 0) > 0
+  const canSubmit = !isPending && result !== null && !blocked && !duplicate
+
+  useAmountKeyboard(
+    (key) => {
+      setAmount((previous) => applyAmountKey(previous, key))
+      setFeedback((current) => (current?.kind === "ok" ? null : current))
+    },
+    () => {
+      if (canSubmit) submit(false)
+    },
+  )
+
+  // Phone: one column in the order operator, amount, details, summary, then a sticky button.
+  // Desktop: choices on the left; amount, summary and button on the right. The "contents"
+  // wrappers let the phone order the items freely while the desktop groups them in columns.
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-4">
-        {feedback && (
-          <div role={feedback.kind === "ok" ? "status" : "alert"}
-            className={cn("rounded-xl p-3 text-sm font-semibold", feedback.kind === "ok" ? "bg-accent text-accent-foreground" : "bg-destructive/10 text-destructive")}>
-            <p className="flex items-start gap-2">
-              {feedback.kind === "ok" && <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />}
-              {feedback.text}
+    <div className={cn(PAGE, "pb-0 lg:pb-8")}>
+      <div className="flex flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-8">
+        <div className="contents lg:flex lg:flex-col lg:gap-5">
+          <div className="order-1 flex flex-col gap-5">
+            <OperatorPicker operators={branch.operators} value={operator.id} onChange={(id) => choose({ operatorId: id })} />
+            <TypePicker value={type} onChange={(nextType) => choose({ type: nextType })} />
+            {type === "OTHER" && <DirectionPicker value={manual} operatorName={operator.name} onChange={setManual} />}
+          </div>
+          <div className="order-3">
+            <EntryDetailsSection value={details} onChange={setDetails} computedFee={result?.quote.fee ?? 0}
+              computedCommission={result?.quote.commission ?? 0} allowManualCommission={context.allowManualCommission} />
+          </div>
+        </div>
+
+        <div className="contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-4">
+          <section className="order-2 flex flex-col gap-3 rounded-2xl border bg-card p-3">
+            <div className="flex h-16 items-center justify-between rounded-xl bg-muted px-4">
+              <p className={cn("font-heading text-4xl font-extrabold tabular-nums", amount === 0 && "text-muted-foreground")} aria-live="polite">
+                {formatAmount(amount)} <span className="text-lg font-bold text-primary">FCFA</span>
+              </p>
+              {amount > 0 && (
+                <button type="button" aria-label="Remettre le montant à zéro" onClick={() => changeAmount(0)} className="flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-card">
+                  <RotateCcw className="size-5" aria-hidden />
+                </button>
+              )}
+            </div>
+            <p className="hidden text-xs text-muted-foreground lg:block">
+              Tapez le montant au clavier · Retour arrière pour effacer · Entrée pour valider
             </p>
-            {feedback.warning && <p className="mt-1 font-normal">{feedback.warning}</p>}
-            {feedback.kind === "ok" && (
-              <Link href="/operations" className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
-                Voir ou annuler
-              </Link>
-            )}
-            {duplicate && (
-              <div className="mt-3 flex gap-2">
-                <Button type="button" className="h-11 flex-1" disabled={isPending} onClick={() => submit(true)}>Enregistrer quand même</Button>
-                <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => { setDuplicate(false); setFeedback(null) }}>Annuler</Button>
+            <div className="grid grid-cols-4 gap-2">
+              {QUICK_AMOUNTS.map((quick) => (
+                <button key={quick} type="button" onClick={() => changeAmount(quick)}
+                  className={cn("h-11 rounded-lg text-sm font-bold tabular-nums", amount === quick ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                  {formatAmount(quick)}
+                </button>
+              ))}
+            </div>
+            <NumericKeypad value={amount} onValueChange={changeAmount} />
+          </section>
+
+          <div className="order-4">
+            <EntrySummary result={result} operatorName={operator.name} blockNegativeBalance={context.blockNegativeBalance} />
+          </div>
+
+          <div className="sticky bottom-0 order-5 -mx-4 border-t bg-card/95 p-4 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0">
+            {feedback && (
+              <div role={feedback.kind === "ok" ? "status" : "alert"}
+                className={cn("mb-3 rounded-xl p-3 text-sm font-semibold", feedback.kind === "ok" ? "bg-accent text-accent-foreground" : "bg-destructive/10 text-destructive")}>
+                <p className="flex items-start gap-2">
+                  {feedback.kind === "ok" && <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />}
+                  {feedback.text}
+                </p>
+                {feedback.warning && <p className="mt-1 font-normal">{feedback.warning}</p>}
+                {feedback.kind === "ok" && (
+                  <Link href="/operations" className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
+                    Voir ou annuler
+                  </Link>
+                )}
+                {duplicate && (
+                  <div className="mt-3 flex gap-2">
+                    <Button type="button" className="h-11 flex-1" disabled={isPending} onClick={() => submit(true)}>Enregistrer quand même</Button>
+                    <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => { setDuplicate(false); setFeedback(null) }}>Annuler</Button>
+                  </div>
+                )}
               </div>
             )}
+            <Button type="button" className="h-14 w-full text-lg font-bold" disabled={!canSubmit} onClick={() => submit(false)}>
+              {isPending ? "Enregistrement…" : amount > 0 ? `Valider ${TYPE_LABELS[type].toLowerCase()} · ${formatFCFA(amount)}` : "Saisissez un montant"}
+            </Button>
           </div>
-        )}
-
-        <OperatorPicker operators={branch.operators} value={operator.id} onChange={(id) => choose({ operatorId: id })} />
-        <TypePicker value={type} onChange={(nextType) => choose({ type: nextType })} />
-        {type === "OTHER" && <DirectionPicker value={manual} operatorName={operator.name} onChange={setManual} />}
-
-        <section className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
-          <div className="flex h-16 items-center justify-between rounded-xl bg-muted px-4">
-            <p className="font-heading text-4xl font-extrabold tabular-nums" aria-live="polite">
-              {formatAmount(amount)} <span className="text-lg font-bold text-primary">FCFA</span>
-            </p>
-            {amount > 0 && (
-              <button type="button" aria-label="Remettre le montant à zéro" onClick={() => setAmount(0)} className="flex size-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-card">
-                <RotateCcw className="size-5" aria-hidden />
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {QUICK_AMOUNTS.map((quick) => (
-              <button key={quick} type="button" onClick={() => setAmount(quick)}
-                className={cn("h-11 rounded-lg text-sm font-bold tabular-nums", amount === quick ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                {formatAmount(quick)}
-              </button>
-            ))}
-          </div>
-          <NumericKeypad value={amount} onValueChange={setAmount} />
-        </section>
-
-        <EntryDetailsSection value={details} onChange={setDetails} computedFee={result?.quote.fee ?? 0}
-          computedCommission={result?.quote.commission ?? 0} allowManualCommission={context.allowManualCommission} />
-        <EntrySummary result={result} operatorName={operator.name} blockNegativeBalance={context.blockNegativeBalance} />
-      </div>
-
-      <div className="sticky bottom-0 border-t bg-card/95 backdrop-blur">
-        <div className="mx-auto w-full max-w-md p-4">
-          <Button type="button" className="h-14 w-full text-lg font-bold" disabled={isPending || !result || blocked || duplicate} onClick={() => submit(false)}>
-            {isPending ? "Enregistrement…" : amount > 0 ? `Valider ${TYPE_LABELS[type].toLowerCase()} · ${formatFCFA(amount)}` : "Saisissez un montant"}
-          </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { PAGE_NARROW } from "@/lib/layout"
+import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
@@ -23,8 +25,8 @@ export default async function OperatorsPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader title="Opérateurs" subtitle="Pour toute l'entreprise" backHref="/dashboard" />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
+      <AppHeader title="Opérateurs" subtitle="Pour toute l'entreprise" backHref="/settings" />
+      <main className={cn(PAGE_NARROW, "gap-4")}>
         <p className="text-muted-foreground">
           {canToggle
             ? "Activez les opérateurs que vous utilisez. Un opérateur désactivé disparaît de la saisie mais son historique est conservé."

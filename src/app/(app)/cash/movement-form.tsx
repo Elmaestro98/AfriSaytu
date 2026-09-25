@@ -78,7 +78,7 @@ export function MovementForm({ branchId, accounts, initialKind, initialAccountId
   const kinds = MOVEMENT_KINDS.filter((item) => item !== "TRANSFER" || operators.length > 1)
 
   return (
-    <section className="flex flex-col gap-5 rounded-2xl border-2 border-primary bg-card p-4">
+    <section className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Type de mouvement">
         {kinds.map((item) => (
           <button key={item} type="button" role="radio" aria-checked={kind === item} onClick={() => setKind(item)}

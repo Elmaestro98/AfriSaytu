@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { PAGE_NARROW } from "@/lib/layout"
+import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
@@ -27,8 +29,8 @@ export default async function CommissionsPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader title="Commissions" subtitle="Règles en vigueur" backHref="/dashboard" />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
+      <AppHeader title="Commissions" subtitle="Règles en vigueur" backHref="/settings" />
+      <main className={cn(PAGE_NARROW, "gap-4")}>
         <p className="text-muted-foreground">
           Indiquez vos commissions et les frais clients par opérateur, type d&apos;opération et tranche de montant.
           Modifier une règle ne change jamais les opérations déjà saisies.

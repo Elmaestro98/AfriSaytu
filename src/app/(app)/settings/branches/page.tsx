@@ -2,6 +2,8 @@ import { MapPin } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { PAGE } from "@/lib/layout"
+import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
@@ -39,9 +41,9 @@ export default async function BranchesPage() {
       <AppHeader
         title="Points de vente"
         subtitle={`${branches.length} point${branches.length > 1 ? "s" : ""} de vente`}
-        backHref="/dashboard"
+        backHref="/settings"
       />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
+      <main className={cn(PAGE, "gap-6", "lg:grid lg:grid-cols-2 lg:items-start")}>
         {branches.map((branch) => (
           <section key={branch.id} className="flex flex-col rounded-2xl border bg-card p-4">
             <h2 className="font-heading text-2xl font-bold">{branch.name}</h2>

@@ -36,6 +36,7 @@
   --color-primary: var(--primary);
   --color-brand-accent-foreground: var(--brand-accent-foreground);
   --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-strong: var(--brand-accent-strong);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -58,6 +59,7 @@
   --primary-foreground: #ffffff;
   --brand-accent: #f2a900;
   --brand-accent-foreground: #1f1600;
+  --brand-accent-strong: #8a5a00; /* accent as readable text on light backgrounds */
   --secondary: #e8ecf8;
   --secondary-foreground: #14181f;
   --muted: #eef1fa;
@@ -97,6 +99,7 @@
   --primary-foreground: #04231b;
   --brand-accent: #f2a900;
   --brand-accent-foreground: #1f1600;
+  --brand-accent-strong: #f5c451;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);

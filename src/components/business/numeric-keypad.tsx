@@ -2,9 +2,9 @@
 
 import { Delete } from "lucide-react"
 
+import { applyAmountKey } from "@/lib/amount-keys"
 import { cn } from "@/lib/utils"
 
-const MAX_DIGITS = 10
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "0", "back"] as const
 
 type NumericKeypadProps = {
@@ -15,16 +15,7 @@ type NumericKeypadProps = {
 // On-screen keypad for amounts (mockup 03): big keys, one hand, no phone keyboard popping up.
 // Works on whole numbers only.
 export function NumericKeypad({ value, onValueChange }: NumericKeypadProps) {
-  const press = (key: (typeof KEYS)[number]) => {
-    const digits = value === 0 ? "" : String(value)
-    if (key === "back") {
-      onValueChange(digits.length <= 1 ? 0 : Number(digits.slice(0, -1)))
-      return
-    }
-    const next = (digits + key).replace(/^0+/, "")
-    if (next.length > MAX_DIGITS) return
-    onValueChange(next === "" ? 0 : Number(next))
-  }
+  const press = (key: (typeof KEYS)[number]) => onValueChange(applyAmountKey(value, key))
 
   return (
     <div className="grid grid-cols-3 gap-2">

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
@@ -26,8 +27,8 @@ export default async function CashPage({ searchParams }: PageProps<"/cash">) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader title="Caisse" subtitle={branchName} backHref="/dashboard" />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
+      <AppHeader title="Caisse" subtitle={branchName} />
+      <main className={cn(PAGE, "gap-4")}>
         {context && context.branches.length > 1 && (
           <nav aria-label="Point de vente" className="flex gap-2 overflow-x-auto">
             {context.branches.map((branch) => (
@@ -40,7 +41,7 @@ export default async function CashPage({ searchParams }: PageProps<"/cash">) {
           </nav>
         )}
         {context ? (
-          <CashScreen key={context.branchId} context={context} />
+          <CashScreen key={context.branchId} context={context} branchName={branchName ?? ""} loadedAt={new Date()} />
         ) : (
           <p className="rounded-xl border border-dashed p-4 text-muted-foreground">Aucun point de vente disponible.</p>
         )}

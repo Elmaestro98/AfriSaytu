@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { PAGE } from "@/lib/layout"
+import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { authorize, canAssignRole } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
@@ -30,9 +32,9 @@ export default async function TeamPage() {
       <AppHeader
         title="Équipe"
         subtitle={`${activeCount} membre${activeCount > 1 ? "s" : ""} actif${activeCount > 1 ? "s" : ""}`}
-        backHref="/dashboard"
+        backHref="/settings"
       />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-4 py-6">
+      <main className={cn(PAGE, "gap-8", "lg:grid lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start")}>
         <InviteForm branches={branches} roles={roles} />
         <MemberList members={members} />
       </main>

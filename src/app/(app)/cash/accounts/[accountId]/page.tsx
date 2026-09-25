@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { PAGE_NARROW } from "@/lib/layout"
 import { formatDayLabel, formatTime } from "@/lib/dates"
 import { formatFCFA } from "@/lib/money"
 import { cn } from "@/lib/utils"
@@ -26,7 +27,7 @@ export default async function AccountLedgerPage({ params }: PageProps<"/cash/acc
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader title={`Grand livre · ${ledger.label}`} subtitle={ledger.branchName} backHref="/cash" />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
+      <main className={cn(PAGE_NARROW, "gap-4")}>
         <section className="rounded-2xl bg-primary p-5 text-primary-foreground">
           <p className="text-xs font-semibold tracking-wide uppercase opacity-80">Solde théorique</p>
           <p className="mt-1 font-heading text-4xl font-extrabold tabular-nums">{formatFCFA(ledger.balance)}</p>

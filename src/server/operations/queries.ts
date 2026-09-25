@@ -1,7 +1,9 @@
+import type { Prisma } from "@/generated/prisma/client"
 import type { TransactionType } from "@/generated/prisma/enums"
 import { formatPhone, maskPhone } from "@/lib/phone"
 import type { ActorContext } from "@/server/auth/actor"
 import { planCancellation } from "@/server/operations/cancel-rules"
+import { visibilityWhere } from "@/server/operations/history-where"
 
 export type OperationRow = {
   id: string
@@ -22,45 +24,32 @@ export type OperationRow = {
   canCancel: boolean
 }
 
-// Latest operations the current user may see: all (owner), their branches (manager),
-// their own (agent). The full history with filters comes with the history screen.
-export async function listRecentOperations(ctx: ActorContext, limit = 50, now = new Date()): Promise<OperationRow[]> {
-  const visibility =
-    ctx.actor.role === "OWNER"
-      ? {}
-      : ctx.actor.role === "MANAGER"
-        ? { branchId: { in: [...ctx.actor.branchIds] } }
-        : { memberId: ctx.actor.memberId }
+export const OPERATION_SELECT = {
+  id: true,
+  type: true,
+  amount: true,
+  fee: true,
+  commission: true,
+  noRule: true,
+  customerPhone: true,
+  reference: true,
+  createdAt: true,
+  status: true,
+  cancelReason: true,
+  branchId: true,
+  memberId: true,
+  closingId: true,
+  operator: { select: { name: true, color: true } },
+  branch: { select: { name: true } },
+  member: { select: { name: true } },
+} satisfies Prisma.TransactionSelect
 
-  const operations = await ctx.db.transaction.findMany({
-    where: visibility,
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    select: {
-      id: true,
-      type: true,
-      amount: true,
-      fee: true,
-      commission: true,
-      noRule: true,
-      customerPhone: true,
-      reference: true,
-      createdAt: true,
-      status: true,
-      cancelReason: true,
-      branchId: true,
-      memberId: true,
-      closingId: true,
-      operator: { select: { name: true, color: true } },
-      branch: { select: { name: true } },
-      member: { select: { name: true } },
-    },
-  })
+type SelectedOperation = Prisma.TransactionGetPayload<{ select: typeof OPERATION_SELECT }>
 
-  // Customer numbers are personal data: agents only see them partly (77 *** ** 34).
-  const showPhone = (phone: string) => (ctx.actor.role === "AGENT" ? maskPhone(phone) : formatPhone(phone))
-
-  return operations.map((operation) => ({
+// Customer numbers are personal data (law 2008-12): agents only see them partly (77 *** ** 34).
+export function toOperationRow(ctx: ActorContext, operation: SelectedOperation, now: Date): OperationRow {
+  const phone = operation.customerPhone
+  return {
     id: operation.id,
     type: operation.type,
     amount: operation.amount,
@@ -71,11 +60,22 @@ export async function listRecentOperations(ctx: ActorContext, limit = 50, now = 
     operatorColor: operation.operator.color,
     branchName: operation.branch.name,
     authorName: operation.member.name,
-    customerPhone: operation.customerPhone ? showPhone(operation.customerPhone) : null,
+    customerPhone: phone ? (ctx.actor.role === "AGENT" ? maskPhone(phone) : formatPhone(phone)) : null,
     reference: operation.reference,
     createdAt: operation.createdAt,
     status: operation.status,
     cancelReason: operation.cancelReason,
     canCancel: planCancellation(ctx.actor, operation, now).ok,
-  }))
+  }
+}
+
+// Latest operations the current user may see (dashboard).
+export async function listRecentOperations(ctx: ActorContext, limit = 50, now = new Date()): Promise<OperationRow[]> {
+  const operations = await ctx.db.transaction.findMany({
+    where: visibilityWhere(ctx.actor),
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    select: OPERATION_SELECT,
+  })
+  return operations.map((operation) => toOperationRow(ctx, operation, now))
 }

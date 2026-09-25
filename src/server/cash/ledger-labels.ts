@@ -17,7 +17,8 @@ export function ledgerLabel({ reason, transaction, movement }: LedgerSource): st
     case "TRANSACTION":
       return operation
     case "CANCELLATION":
-      return `Annulation : ${operation.toLowerCase()}`
+      // A counter-entry without an operation reverses a closing adjustment (reopened closing).
+      return transaction ? `Annulation : ${operation.toLowerCase()}` : "Annulation d'ajustement (clôture rouverte)"
     case "MOVEMENT": {
       if (!movement) return "Mouvement interne"
       const label = MOVEMENT_LABELS[movement.kind]

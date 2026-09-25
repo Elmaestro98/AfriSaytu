@@ -1,10 +1,9 @@
 import type { TenantClient } from "@/server/db/tenant"
 
+type LedgerReader = Pick<TenantClient, "ledgerEntry">
+
 // A balance is never stored: it is the sum of the ledger lines of the account.
-export async function getBalances(
-  db: TenantClient,
-  accountIds: readonly string[],
-): Promise<Map<string, number>> {
+export async function getBalances(db: LedgerReader, accountIds: readonly string[]): Promise<Map<string, number>> {
   const balances = new Map<string, number>(accountIds.map((id) => [id, 0]))
   if (accountIds.length === 0) return balances
 

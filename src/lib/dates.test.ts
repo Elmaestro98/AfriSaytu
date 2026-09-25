@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { dayKey, formatDayLabel, formatTime } from "@/lib/dates"
+import { dayKey, formatDayLabel, formatLongDate, formatShortDay, formatTime, startOfDakarDay } from "@/lib/dates"
 
 const NOW = new Date("2026-09-25T10:00:00.000Z") // Dakar is UTC+0 all year
 
@@ -12,6 +12,19 @@ describe("dates in Africa/Dakar", () => {
   it("groups by calendar day", () => {
     expect(dayKey(new Date("2026-09-25T23:59:00.000Z"))).toBe("2026-09-25")
     expect(dayKey(new Date("2026-09-26T00:01:00.000Z"))).toBe("2026-09-26")
+  })
+
+  it("finds the start of the Dakar day", () => {
+    expect(startOfDakarDay(new Date("2026-09-25T23:59:59.000Z")).toISOString()).toBe("2026-09-25T00:00:00.000Z")
+    expect(startOfDakarDay(new Date("2026-09-25T00:00:00.000Z")).toISOString()).toBe("2026-09-25T00:00:00.000Z")
+  })
+
+  it("writes a short day for charts", () => {
+    expect(formatShortDay("2026-09-25")).toBe("ven. 25")
+  })
+
+  it("writes a full date", () => {
+    expect(formatLongDate(NOW)).toBe("Vendredi 25 septembre 2026")
   })
 
   it("says today and yesterday in words", () => {
