@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/business/app-header"
 import { requireActor } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
+import { loadCorrection } from "@/server/operations/correction"
 import { loadEntryContext } from "@/server/operations/entry-context"
 
 import { EntryScreen } from "./entry-screen"
@@ -19,9 +20,13 @@ export default async function NewOperationPage({ searchParams }: PageProps<"/ope
   }
   if (!authorize(ctx.actor, "transaction:create").allowed) redirect("/dashboard")
 
-  const context = await loadEntryContext(ctx)
+  const query = await searchParams
+  const [context, correction] = await Promise.all([
+    loadEntryContext(ctx),
+    typeof query.correct === "string" ? loadCorrection(ctx, query.correct) : Promise.resolve(null),
+  ])
   const usable = context.branches.filter((branch) => branch.operators.length > 0)
-  const requested = (await searchParams).branch
+  const requested = correction?.branchId ?? query.branch
   const branch =
     usable.find((item) => item.id === requested) ??
     usable.find((item) => item.id === context.last?.branchId) ??
@@ -29,7 +34,7 @@ export default async function NewOperationPage({ searchParams }: PageProps<"/ope
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader title="Nouvelle opération" subtitle={branch?.name} backHref="/dashboard" />
+      <AppHeader title={correction ? "Corriger une opération" : "Nouvelle opération"} subtitle={branch?.name} backHref={correction ? "/operations" : "/dashboard"} />
 
       {usable.length > 1 && (
         <nav aria-label="Point de vente" className="mx-auto flex w-full max-w-md gap-2 overflow-x-auto px-4 pt-4 lg:mx-0 lg:max-w-6xl lg:px-8 lg:pt-6">
@@ -43,7 +48,8 @@ export default async function NewOperationPage({ searchParams }: PageProps<"/ope
       )}
 
       {branch ? (
-        <EntryScreen key={branch.id} context={{ ...context, branches: usable }} branchId={branch.id} />
+        <EntryScreen key={`${branch.id}:${correction?.transactionId ?? ""}`} context={{ ...context, branches: usable }} branchId={branch.id}
+          correction={correction?.branchId === branch.id ? correction : null} />
       ) : (
         <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-3 px-4 py-10 text-center lg:mx-0 lg:px-8 lg:text-left">
           <p className="font-heading text-xl font-bold">Aucun opérateur disponible</p>

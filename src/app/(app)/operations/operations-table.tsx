@@ -19,7 +19,8 @@ type OperationsTableProps = {
 
 // Desktop view of the latest operations: one row per operation (mockup 01).
 export function OperationsTable({ operations, showAuthor }: OperationsTableProps) {
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState<{ id: string; correct: boolean } | null>(null)
+  const cancellingId = cancelling?.id ?? null
   const columns = showAuthor ? 8 : 7
 
   return (
@@ -72,16 +73,21 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
                   </td>
                   <td className="px-4 py-3 text-right">
                     {operation.canCancel && cancellingId !== operation.id && (
-                      <Button type="button" variant="ghost" className="h-9 text-destructive" onClick={() => setCancellingId(operation.id)}>
-                        Annuler
-                      </Button>
+                      <span className="flex justify-end gap-1">
+                        <Button type="button" variant="ghost" className="h-9" onClick={() => setCancelling({ id: operation.id, correct: true })}>
+                          Corriger
+                        </Button>
+                        <Button type="button" variant="ghost" className="h-9 text-destructive" onClick={() => setCancelling({ id: operation.id, correct: false })}>
+                          Annuler
+                        </Button>
+                      </span>
                     )}
                   </td>
                 </tr>
                 {cancellingId === operation.id && (
                   <tr>
                     <td colSpan={columns} className="px-4 pb-4">
-                      <CancelPanel transactionId={operation.id} onClose={() => setCancellingId(null)} />
+                      <CancelPanel transactionId={operation.id} thenCorrect={cancelling?.correct ?? false} onClose={() => setCancelling(null)} />
                     </td>
                   </tr>
                 )}

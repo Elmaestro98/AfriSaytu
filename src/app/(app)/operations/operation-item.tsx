@@ -13,7 +13,7 @@ import type { OperationRow } from "@/server/operations/queries"
 import { CancelPanel } from "./cancel-panel"
 
 export function OperationItem({ operation, showAuthor }: { operation: OperationRow; showAuthor: boolean }) {
-  const [cancelling, setCancelling] = useState(false)
+  const [cancelling, setCancelling] = useState<"cancel" | "correct" | null>(null)
   const cancelled = operation.status === "CANCELLED"
 
   const details = [
@@ -56,11 +56,16 @@ export function OperationItem({ operation, showAuthor }: { operation: OperationR
 
       {operation.canCancel &&
         (cancelling ? (
-          <CancelPanel transactionId={operation.id} onClose={() => setCancelling(false)} />
+          <CancelPanel transactionId={operation.id} thenCorrect={cancelling === "correct"} onClose={() => setCancelling(null)} />
         ) : (
-          <Button type="button" variant="ghost" className="h-11 self-end text-destructive" onClick={() => setCancelling(true)}>
-            Annuler l&apos;opération
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" className="h-11" onClick={() => setCancelling("correct")}>
+              Corriger
+            </Button>
+            <Button type="button" variant="ghost" className="h-11 text-destructive" onClick={() => setCancelling("cancel")}>
+              Annuler l&apos;opération
+            </Button>
+          </div>
         ))}
     </li>
   )

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { newUuid } from "@/lib/uuid"
 import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
 import type { Sign } from "@/server/ledger/effects"
+import type { EntryCorrection } from "@/server/operations/correction"
 import { computeEntry } from "@/server/operations/compute-entry"
 import type { EntryContext } from "@/server/operations/entry-context"
 
@@ -28,21 +29,27 @@ import { useAmountKeyboard } from "./use-amount-keyboard"
 const QUICK_AMOUNTS = [5_000, 10_000, 25_000, 50_000]
 const NO_DIRECTION = { uv: 0 as Sign, cash: 0 as Sign }
 
-type Props = { context: EntryContext; branchId: string }
+// correction: the cancelled operation being entered again ("Corriger"), to pre-fill the screen.
+type Props = { context: EntryContext; branchId: string; correction?: EntryCorrection | null }
 
-export function EntryScreen({ context, branchId }: Props) {
+export function EntryScreen({ context, branchId, correction = null }: Props) {
   const router = useRouter()
   const branch = context.branches.find((item) => item.id === branchId) ?? context.branches[0]
   const lastOperator = context.last?.branchId === branch.id ? context.last.operatorId : undefined
-  const [operatorId, setOperatorId] = useState(branch.operators.find((op) => op.id === lastOperator)?.id ?? branch.operators[0]?.id ?? "")
-  const [type, setType] = useState<TransactionType>(context.last?.type ?? "DEPOSIT")
+  const startOperator = correction?.operatorId ?? lastOperator
+  const [operatorId, setOperatorId] = useState(branch.operators.find((op) => op.id === startOperator)?.id ?? branch.operators[0]?.id ?? "")
+  const [type, setType] = useState<TransactionType>(correction?.type ?? context.last?.type ?? "DEPOSIT")
   const operator = branch.operators.find((item) => item.id === operatorId) ?? branch.operators[0]
   const freshDetails = (nextType: TransactionType, nextOperator = operator): EntryDetails => ({
     customerPhone: "", reference: "", note: "", fee: null, commission: null,
     feeInCash: nextOperator?.effects[nextType].feeInCashDefault ?? false,
   })
-  const [amount, setAmount] = useState(0)
-  const [details, setDetails] = useState<EntryDetails>(() => freshDetails(type))
+  const [amount, setAmount] = useState(correction?.amount ?? 0)
+  const [details, setDetails] = useState<EntryDetails>(() =>
+    correction
+      ? { ...freshDetails(type), customerPhone: correction.customerPhone, reference: correction.reference, note: correction.note, fee: correction.fee, feeInCash: correction.feeInCash }
+      : freshDetails(type),
+  )
   const [manual, setManual] = useState(NO_DIRECTION)
   const [key, setKey] = useState(() => newUuid())
   const [feedback, setFeedback] = useState<{ kind: "ok" | "error"; text: string; warning?: string | null } | null>(null)
@@ -87,7 +94,9 @@ export function EntryScreen({ context, branchId }: Props) {
         setManual(NO_DIRECTION)
         setDuplicate(false)
         setKey(newUuid())
-        router.refresh() // reload balances for the next operation
+        // After a correction, leave its address: the next operation starts empty.
+        if (correction) router.replace(`/operations/new?branch=${branch.id}`)
+        else router.refresh() // reload balances for the next operation
       } else {
         setDuplicate(response.duplicate === true)
         setFeedback({ kind: "error", text: response.error })
@@ -119,6 +128,12 @@ export function EntryScreen({ context, branchId }: Props) {
   // wrappers let the phone order the items freely while the desktop groups them in columns.
   return (
     <div className={cn(PAGE, "pb-0 lg:pb-8")}>
+      {correction && !feedback && (
+        <p role="status" className="mb-5 rounded-xl border-2 border-brand-accent bg-brand-accent/10 p-3 text-sm">
+          <span className="block font-semibold">Correction de « {correction.label} », annulée{correction.cancelReason ? ` (${correction.cancelReason})` : ""}.</span>
+          Les informations sont reprises : corrigez ce qui est faux, puis validez.
+        </p>
+      )}
       <div className="flex flex-1 flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-8">
         <div className="contents lg:flex lg:flex-col lg:gap-5">
           <div className="order-1 flex flex-col gap-5">
