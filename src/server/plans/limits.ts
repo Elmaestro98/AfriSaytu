@@ -33,6 +33,18 @@ export function yearlyPrice(plan: SubscriptionPlan): number {
   return PLAN_MONTHLY_PRICE[plan] * (12 - FREE_MONTHS_PER_YEAR)
 }
 
+// Durations the owner can pay for. A full year gets the yearly price (2 months free).
+export const PAYABLE_MONTHS = [1, 3, 6, 12] as const
+export type PayableMonths = (typeof PAYABLE_MONTHS)[number]
+
+export function isPayableMonths(value: number): value is PayableMonths {
+  return (PAYABLE_MONTHS as readonly number[]).includes(value)
+}
+
+export function subscriptionPrice(plan: SubscriptionPlan, months: PayableMonths): number {
+  return months === 12 ? yearlyPrice(plan) : PLAN_MONTHLY_PRICE[plan] * months
+}
+
 // What each plan includes, as shown on the subscription screen (section 13).
 export const PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> = {
   BASIC: ["Saisie, commissions, historique", "Caisse et clôture", "Tous les opérateurs", "Historique sur 3 mois"],

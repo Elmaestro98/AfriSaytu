@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { PLAN_MONTHLY_PRICE, canAddBranch, canAddMember, historyStart, yearlyPrice } from "@/server/plans/limits"
+import { PLAN_MONTHLY_PRICE, canAddBranch, canAddMember, historyStart, isPayableMonths, subscriptionPrice, yearlyPrice } from "@/server/plans/limits"
 
 describe("branch limits", () => {
   it("allows one branch on Basic and Pro", () => {
@@ -66,5 +66,19 @@ describe("historyStart", () => {
 
   it("crosses the start of the year", () => {
     expect(historyStart("BASIC", new Date("2027-01-15T23:59:00.000Z"))).toEqual(new Date("2026-10-15T00:00:00.000Z"))
+  })
+})
+
+describe("subscriptionPrice", () => {
+  it("multiplies the monthly price, and gives 2 months free on a year", () => {
+    expect(subscriptionPrice("PRO", 1)).toBe(5_000)
+    expect(subscriptionPrice("PRO", 3)).toBe(15_000)
+    expect(subscriptionPrice("BASIC", 6)).toBe(15_000)
+    expect(subscriptionPrice("BUSINESS", 12)).toBe(100_000)
+  })
+
+  it("only accepts the offered durations", () => {
+    expect([1, 3, 6, 12].every(isPayableMonths)).toBe(true)
+    expect([0, 2, 24, 1.5].some(isPayableMonths)).toBe(false)
   })
 })

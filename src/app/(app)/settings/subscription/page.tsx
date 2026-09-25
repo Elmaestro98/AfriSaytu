@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
 import { formatLongDate } from "@/lib/dates"
-import { formatAmount } from "@/lib/money"
+import { formatAmount, formatFCFA } from "@/lib/money"
 import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
@@ -11,7 +11,10 @@ import { deadlineLine, statusLabel } from "@/server/plans/banner"
 import { PLAN_LABELS } from "@/server/plans/limits"
 import { SubscriptionAccessError, loadSubscriptionOverview } from "@/server/plans/overview"
 
+import { PayWithWave } from "./pay-with-wave"
 import { PlanCards } from "./plan-cards"
+
+const PAYMENT_STATUS = { PENDING: "En attente de confirmation", PAID: "Confirmé", FAILED: "Refusé" } as const
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number | null }) {
   const percent = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100))
@@ -47,7 +50,8 @@ export default async function SubscriptionPage() {
     if (error instanceof SubscriptionAccessError) redirect("/dashboard")
     throw error
   }
-  const { plan, state, limits, usage } = overview
+  const { plan, state, limits, usage, payments } = overview
+  const pending = payments.find((payment) => payment.status === "PENDING")
   const deadline = deadlineLine(state, formatLongDate)
 
   return (
@@ -70,12 +74,42 @@ export default async function SubscriptionPage() {
           </div>
         </section>
 
+        {pending ? (
+          <p role="status" className="rounded-2xl border-2 border-brand-accent bg-card p-4">
+            <span className="block font-semibold">Paiement de {formatFCFA(pending.amount)} en attente de confirmation</span>
+            <span className="text-sm text-muted-foreground">
+              Référence Wave {pending.providerRef}. Votre abonnement sera activé dès que nous aurons vérifié la réception.
+            </span>
+          </p>
+        ) : (
+          <PayWithWave defaultPlan={plan} />
+        )}
+
         <PlanCards current={plan} />
 
-        <p className="text-sm text-muted-foreground">
-          Tarifs indicatifs. Le paiement par Wave et Orange Money arrive prochainement ; en attendant, contactez le support AfriSaytu pour
-          régler votre abonnement.
-        </p>
+        {payments.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="font-heading text-lg font-bold">Mes paiements</h2>
+            <ul className="divide-y rounded-2xl border bg-card">
+              {payments.map((payment) => (
+                <li key={payment.id} className="flex items-center justify-between gap-3 p-4 text-sm">
+                  <span>
+                    <span className="block font-semibold">{formatLongDate(payment.createdAt)}</span>
+                    <span className="text-muted-foreground">{payment.providerRef ? `Réf. ${payment.providerRef}` : "Enregistré par le support"}</span>
+                  </span>
+                  <span className="text-right">
+                    <span className="block font-bold tabular-nums">{formatFCFA(payment.amount)}</span>
+                    <span className={cn("text-xs font-semibold", payment.status === "FAILED" ? "text-destructive" : "text-muted-foreground")}>
+                      {PAYMENT_STATUS[payment.status]}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <p className="text-sm text-muted-foreground">Tarifs indicatifs. Un souci de paiement ? Contactez le support AfriSaytu.</p>
       </main>
     </div>
   )

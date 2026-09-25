@@ -16,6 +16,8 @@ export const AUDIT_ACTIONS = {
   "operator.activate": "Activation d'opérateur",
   "operator.deactivate": "Désactivation d'opérateur",
   "operator.effects": "Réglage d'opérateur",
+  "subscription.paymentDeclared": "Paiement Wave déclaré",
+  "subscription.paymentRefused": "Paiement refusé (support)",
   "subscription.extendTrial": "Prolongation de l'essai (support)",
   "subscription.payment": "Paiement enregistré (support)",
   "subscription.plan": "Changement de formule (support)",

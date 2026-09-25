@@ -42,6 +42,16 @@ function reasonOf(command: AdminCommand): string {
   return command.reason
 }
 
+// A subscription as stored in the audit log (dates as text).
+export function snapshot(value: CurrentSubscription): Prisma.InputJsonValue {
+  return {
+    plan: value.plan,
+    status: value.status,
+    trialEndsAt: value.trialEndsAt?.toISOString() ?? null,
+    currentPeriodEnd: value.currentPeriodEnd?.toISOString() ?? null,
+  }
+}
+
 export async function runAdminCommand(
   db: PrismaClient,
   adminUserId: string,
@@ -75,12 +85,6 @@ export async function runAdminCommand(
       })
     }
 
-    const snapshot = (value: CurrentSubscription): Prisma.InputJsonValue => ({
-      plan: value.plan,
-      status: value.status,
-      trialEndsAt: value.trialEndsAt?.toISOString() ?? null,
-      currentPeriodEnd: value.currentPeriodEnd?.toISOString() ?? null,
-    })
     await tx.auditLog.create({
       data: {
         organizationId,

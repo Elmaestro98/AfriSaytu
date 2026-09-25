@@ -457,15 +457,17 @@ model Subscription {
 }
 
 model Payment {
-  id             String        @id @default(cuid())
+  id             String            @id @default(cuid())
   organizationId String
   subscriptionId String?
   amount         Int // FCFA
   provider       String // aggregator or operator used
   providerRef    String?
-  status         PaymentStatus @default(PENDING)
+  plan           SubscriptionPlan? // what the payment is for: set when the owner declares it
+  months         Int?
+  status         PaymentStatus     @default(PENDING)
   paidAt         DateTime?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime          @default(now())
 
   organization Organization  @relation(fields: [organizationId], references: [id])
   subscription Subscription? @relation(fields: [subscriptionId], references: [id])

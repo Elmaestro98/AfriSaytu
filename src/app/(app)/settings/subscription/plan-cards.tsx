@@ -12,8 +12,8 @@ function limitText(limit: number | null, one: string, many: string): string {
   return limit === 1 ? `1 ${one}` : `Jusqu'à ${formatAmount(limit)} ${many}`
 }
 
-// The three plans side by side (cahier 13), the current one highlighted. Payment comes with the
-// payment provider: the button says so instead of pretending.
+// The three plans side by side (cahier 13), the current one highlighted. Paying is done with
+// Wave, on the same screen (pay-with-wave.tsx).
 export function PlanCards({ current }: { current: SubscriptionPlan }) {
   return (
     <section className="flex flex-col gap-3">
@@ -44,10 +44,6 @@ export function PlanCards({ current }: { current: SubscriptionPlan }) {
                   </li>
                 ))}
               </ul>
-              <button type="button" disabled
-                className="h-11 rounded-xl border font-semibold text-muted-foreground disabled:cursor-not-allowed">
-                Paiement en ligne bientôt disponible
-              </button>
             </article>
           )
         })}

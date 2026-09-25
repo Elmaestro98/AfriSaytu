@@ -6,15 +6,17 @@ import { formatAmount, formatFCFA } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { getAdminDb } from "@/server/admin/db"
 import { AdminAccessError } from "@/server/admin/identity"
+import { listPendingPayments } from "@/server/admin/payments"
 import { loadAdminOverview } from "@/server/admin/queries"
 import { STATUS_LABELS, statusLabel } from "@/server/plans/banner"
 import type { SubscriptionState } from "@/server/plans/lifecycle"
 import { PLAN_LABELS } from "@/server/plans/limits"
 
+import { PendingPayments } from "./pending-payments"
 import { STATUS_TONE } from "./status-tone"
 
 // Clients of the SaaS (F-63): aggregates only, never the detail of their operations.
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   let admin
   try {
     admin = await getAdminDb()
@@ -23,10 +25,16 @@ export default async function AdminPage() {
     throw error
   }
   const now = new Date()
-  const overview = await loadAdminOverview(admin.db, now)
+  const [overview, pending, query] = await Promise.all([loadAdminOverview(admin.db, now), listPendingPayments(admin.db), searchParams])
+  const ok = typeof query.ok === "string" ? query.ok : null
+  const error = typeof query.error === "string" ? query.error : null
 
   return (
     <>
+      {ok && <p role="status" className="rounded-xl bg-accent px-4 py-3 font-semibold text-accent-foreground">{ok}</p>}
+      {error && <p role="alert" className="rounded-xl bg-destructive/10 px-4 py-3 font-semibold text-destructive">{error}</p>}
+      <PendingPayments payments={pending} returnTo="/admin" showClient />
+
       <section aria-label="Chiffres globaux" className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <div className="rounded-2xl border bg-card p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase">Clients</p>

@@ -7,16 +7,20 @@ import { cn } from "@/lib/utils"
 import { PAYMENT_PROVIDER_LABELS } from "@/schemas/admin"
 import { getAdminDb } from "@/server/admin/db"
 import { AdminAccessError } from "@/server/admin/identity"
+import { listPendingPayments } from "@/server/admin/payments"
 import { loadAdminOrganization } from "@/server/admin/queries"
 import { STATUS_LABELS, deadlineLine, statusLabel } from "@/server/plans/banner"
 import { PLAN_LABELS } from "@/server/plans/limits"
 
+import { PendingPayments } from "../pending-payments"
 import { STATUS_TONE } from "../status-tone"
 import { AdminForms } from "./admin-forms"
 
 function providerLabel(provider: string): string {
   return Object.hasOwn(PAYMENT_PROVIDER_LABELS, provider) ? PAYMENT_PROVIDER_LABELS[provider as keyof typeof PAYMENT_PROVIDER_LABELS] : provider
 }
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = { PENDING: "En attente", PAID: "Payé", FAILED: "Refusé" }
 
 function first(value: string | string[] | undefined): string | null {
   return (Array.isArray(value) ? value[0] : value) ?? null
@@ -34,7 +38,7 @@ export default async function AdminOrganizationPage({ params, searchParams }: Pa
   const { organizationId } = await params
   const query = await searchParams
   const now = new Date()
-  const detail = await loadAdminOrganization(admin.db, organizationId, now)
+  const [detail, pending] = await Promise.all([loadAdminOrganization(admin.db, organizationId, now), listPendingPayments(admin.db, organizationId)])
   if (!detail) notFound()
 
   const stored = detail.subscriptions[0]
@@ -79,6 +83,8 @@ export default async function AdminOrganizationPage({ params, searchParams }: Pa
         </div>
       </section>
 
+      <PendingPayments payments={pending} returnTo={`/admin/${detail.id}`} showClient={false} />
+
       <AdminForms organizationId={detail.id} plan={detail.plan}
         suspended={stored?.status === "SUSPENDED" || stored?.status === "READ_ONLY"} hasPaid={Boolean(stored?.currentPeriodEnd)} />
 
@@ -93,7 +99,10 @@ export default async function AdminOrganizationPage({ params, searchParams }: Pa
                   <span className="block font-semibold">{formatLongDate(payment.createdAt)}</span>
                   <span className="text-muted-foreground">{providerLabel(payment.provider)}{payment.providerRef && ` · ${payment.providerRef}`}</span>
                 </span>
-                <span className="font-bold tabular-nums">{formatFCFA(payment.amount)}</span>
+                <span className="text-right">
+                  <span className="block font-bold tabular-nums">{formatFCFA(payment.amount)}</span>
+                  <span className="text-xs text-muted-foreground">{PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}</span>
+                </span>
               </li>
             ))}
           </ul>
