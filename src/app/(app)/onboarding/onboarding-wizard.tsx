@@ -2,22 +2,42 @@
 
 import { useOrganizationList } from "@clerk/nextjs"
 import { zodResolver } from "@hookform/resolvers/zod"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { FormProvider, useForm, type FieldPath } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { onboardingSchema, type OnboardingInput } from "@/schemas/onboarding"
 import type { ActiveOperator } from "@/server/onboarding/queries"
 
 import { completeOnboarding } from "./actions"
+import { OnboardingHeader, type StepInfo } from "./onboarding-header"
 import { CashStep } from "./steps-cash"
 import { BranchStep, CompanyStep } from "./steps-basic"
 import { OperatorsStep } from "./steps-operators"
 
-const STEP_TITLES = ["Votre entreprise", "Point de vente", "Opérateurs", "Caisse et récapitulatif"]
+const STEPS: StepInfo[] = [
+  {
+    short: "Entreprise",
+    title: "Votre entreprise",
+    help: "Le nom qui apparaîtra sur vos rapports et pour votre équipe.",
+  },
+  {
+    short: "Kiosque",
+    title: "Votre point de vente",
+    help: "La boutique ou le kiosque où vous faites vos opérations. Vous pourrez en ajouter d'autres.",
+  },
+  {
+    short: "Opérateurs",
+    title: "Vos opérateurs",
+    help: "Choisissez ceux que vous utilisez et indiquez le solde affiché dans chaque application.",
+  },
+  {
+    short: "Caisse",
+    title: "Votre caisse",
+    help: "Comptez les espèces du tiroir, vérifiez le récapitulatif, puis terminez.",
+  },
+]
 
 // Fields checked before moving on from each step.
 const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
@@ -27,7 +47,7 @@ const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
   ["cash"],
 ]
 
-const LAST_STEP = STEP_TITLES.length - 1
+const LAST_STEP = STEPS.length - 1
 
 export function OnboardingWizard({ operators }: { operators: readonly ActiveOperator[] }) {
   const router = useRouter()
@@ -48,9 +68,14 @@ export function OnboardingWizard({ operators }: { operators: readonly ActiveOper
     },
   })
 
+  const goTo = (next: number) => {
+    setStep(next)
+    window.scrollTo({ top: 0 })
+  }
+
   const goNext = async () => {
     const valid = await form.trigger(STEP_FIELDS[step])
-    if (valid) setStep((current) => Math.min(current + 1, LAST_STEP))
+    if (valid) goTo(Math.min(step + 1, LAST_STEP))
   }
 
   const submit = (values: OnboardingInput) => {
@@ -69,24 +94,13 @@ export function OnboardingWizard({ operators }: { operators: readonly ActiveOper
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 p-4">
-      <header className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="AfriSaytu" width={408} height={612} className="h-12 w-auto" />
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Étape {step + 1} sur {STEP_TITLES.length}
-            </p>
-            <h1 className="text-xl font-bold text-primary">{STEP_TITLES[step]}</h1>
-          </div>
-        </div>
-        <Progress value={((step + 1) / STEP_TITLES.length) * 100} aria-label="Progression" />
-      </header>
+    <div className="flex flex-1 flex-col">
+      <OnboardingHeader steps={STEPS} current={step} />
 
       <FormProvider {...form}>
         <form
           noValidate
-          className="flex flex-1 flex-col gap-6"
+          className="flex flex-1 flex-col"
           onSubmit={(event) => {
             event.preventDefault()
             // Enter must never submit early: only the last step sends the form.
@@ -94,37 +108,40 @@ export function OnboardingWizard({ operators }: { operators: readonly ActiveOper
             else void form.handleSubmit(submit)(event)
           }}
         >
-          <div className="flex-1">
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
             {step === 0 && <CompanyStep />}
             {step === 1 && <BranchStep />}
             {step === 2 && <OperatorsStep catalog={operators} />}
             {step === 3 && <CashStep catalog={operators} />}
+
+            {serverError && (
+              <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
+                {serverError}
+              </p>
+            )}
           </div>
 
-          {serverError && (
-            <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm font-medium text-destructive">
-              {serverError}
-            </p>
-          )}
-
-          <div className="flex gap-3">
-            {step > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 flex-1 text-base"
-                disabled={isPending}
-                onClick={() => setStep((current) => current - 1)}
-              >
-                Retour
+          {/* Actions stay at the bottom of the screen, within thumb reach. */}
+          <div className="sticky bottom-0 border-t bg-card/95 backdrop-blur">
+            <div className="mx-auto flex w-full max-w-md gap-3 p-4">
+              {step > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 flex-1 text-base"
+                  disabled={isPending}
+                  onClick={() => goTo(step - 1)}
+                >
+                  Retour
+                </Button>
+              )}
+              <Button type="submit" className="h-12 flex-[2] text-base font-bold" disabled={isPending}>
+                {step < LAST_STEP ? "Continuer" : isPending ? "Création en cours…" : "Terminer la configuration"}
               </Button>
-            )}
-            <Button type="submit" className="h-12 flex-1 text-base" disabled={isPending}>
-              {step < LAST_STEP ? "Continuer" : isPending ? "Création…" : "Terminer"}
-            </Button>
+            </div>
           </div>
         </form>
       </FormProvider>
-    </main>
+    </div>
   )
 }

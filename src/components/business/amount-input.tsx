@@ -28,7 +28,7 @@ export function AmountInput({ value, onValueChange, className, ...props }: Amoun
           const digits = event.target.value.replace(/\D/g, "").slice(0, MAX_DIGITS)
           onValueChange(parseAmount(digits) ?? 0)
         }}
-        className={cn("h-12 pr-16 text-lg font-bold", className)}
+        className={cn("h-14 pr-16 font-heading text-2xl font-bold md:text-2xl tabular-nums", className)}
       />
       <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm font-medium text-muted-foreground">
         FCFA

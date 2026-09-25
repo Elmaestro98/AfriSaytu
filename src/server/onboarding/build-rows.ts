@@ -1,16 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client"
-import {
-  AccountKind,
-  LedgerReason,
-  Role,
-  SubscriptionPlan,
-  SubscriptionStatus,
-} from "@/generated/prisma/enums"
+import { Role, SubscriptionPlan, SubscriptionStatus } from "@/generated/prisma/enums"
 import type { OnboardingInput } from "@/schemas/onboarding"
+import { buildBranchAccounts, type CatalogOperator } from "@/server/branches/accounts"
+
+export { UnknownOperatorError, type CatalogOperator } from "@/server/branches/accounts"
 
 export const TRIAL_DAYS = 7
-
-export type CatalogOperator = { id: string; name: string }
 
 export type ProvisioningContext = {
   clerkOrgId: string
@@ -32,13 +27,6 @@ export type ProvisioningRows = {
   subscription: Prisma.SubscriptionCreateManyInput
 }
 
-export class UnknownOperatorError extends Error {
-  constructor(operatorId: string) {
-    super(`Operator "${operatorId}" is not in the active catalogue`)
-    this.name = "UnknownOperatorError"
-  }
-}
-
 function emptyToNull(value: string | undefined): string | null {
   return value && value.length > 0 ? value : null
 }
@@ -54,59 +42,22 @@ export function buildProvisioningRows(
   const memberId = newId()
   const branchId = newId()
 
-  const catalog = new Map(context.operators.map((operator) => [operator.id, operator]))
-
-  const accounts: Prisma.AccountCreateManyInput[] = []
-  const ledgerEntries: Prisma.LedgerEntryCreateManyInput[] = []
-
-  // An opening balance is the first ledger line of the account. A zero balance needs no line.
-  const addAccount = (account: Prisma.AccountCreateManyInput, openingBalance: number) => {
-    accounts.push(account)
-    if (openingBalance > 0) {
-      ledgerEntries.push({
-        id: newId(),
-        organizationId,
-        accountId: account.id as string,
-        reason: LedgerReason.OPENING,
-        delta: openingBalance,
-        memberId,
-      })
-    }
-  }
-
-  const orgOperators: Prisma.OrgOperatorCreateManyInput[] = input.operators.map((setup) => {
-    const operator = catalog.get(setup.operatorId)
-    if (!operator) throw new UnknownOperatorError(setup.operatorId)
-
-    addAccount(
-      {
-        id: newId(),
-        organizationId,
-        branchId,
-        kind: AccountKind.OPERATOR,
-        operatorId: operator.id,
-        label: operator.name,
-        accountNumber: emptyToNull(setup.accountNumber),
-        alertThreshold: setup.alertThreshold,
-      },
-      setup.openingBalance,
-    )
-
-    return { id: newId(), organizationId, operatorId: operator.id, isActive: true }
+  const { accounts, ledgerEntries } = buildBranchAccounts({
+    organizationId,
+    branchId,
+    memberId,
+    operators: input.operators,
+    cash: input.cash,
+    catalog: context.operators,
+    newId,
   })
 
-  addAccount(
-    {
-      id: newId(),
-      organizationId,
-      branchId,
-      kind: AccountKind.CASH,
-      operatorId: null,
-      label: "Caisse espèces",
-      alertThreshold: input.cash.alertThreshold,
-    },
-    input.cash.openingBalance,
-  )
+  const orgOperators: Prisma.OrgOperatorCreateManyInput[] = input.operators.map((setup) => ({
+    id: newId(),
+    organizationId,
+    operatorId: setup.operatorId,
+    isActive: true,
+  }))
 
   const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000)
 

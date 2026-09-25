@@ -4,7 +4,8 @@ import { withTenant, type TenantClient } from "@/server/db/tenant"
 
 export type TenantContext = {
   db: TenantClient
-  organizationId: string
+  organizationId: string // internal id, resolved from the session
+  clerkOrgId: string
   userId: string
 }
 
@@ -24,6 +25,7 @@ export async function getTenantDb(): Promise<TenantContext> {
   return {
     db: withTenant(getBaseClient(), organization.id),
     organizationId: organization.id,
+    clerkOrgId: session.clerkOrgId,
     userId: session.userId,
   }
 }

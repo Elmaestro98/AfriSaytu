@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Display face: headings and large amounts. Body face: everything else.
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const body = Figtree({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -20,12 +21,23 @@ export const metadata: Metadata = {
   icons: { icon: "/logo.png" },
 };
 
+// Clerk renders its own widgets: they receive the brand colour and fonts here.
+// #0B5D4B mirrors --primary in globals.css.
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#0B5D4B",
+    colorText: "#14181F",
+    borderRadius: "0.75rem",
+    fontFamily: "var(--font-body)",
+  },
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={clerkAppearance}>
       <html
         lang="fr"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={`${display.variable} ${body.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col">{children}</body>
       </html>

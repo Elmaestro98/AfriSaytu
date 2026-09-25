@@ -43,10 +43,17 @@ export function OperatorsStep({ catalog }: { catalog: readonly ActiveOperator[] 
       <FieldError message={errors.operators?.message ?? errors.operators?.root?.message} />
 
       {fields.map((field, index) => {
-        const name = catalog.find((operator) => operator.id === field.operatorId)?.name ?? "Opérateur"
+        const operator = catalog.find((item) => item.id === field.operatorId)
         return (
-          <fieldset key={field.id} className="flex flex-col gap-4 rounded-xl border bg-card p-4">
-            <legend className="px-1 text-lg font-bold text-primary">{name}</legend>
+          <fieldset
+            key={field.id}
+            className="flex flex-col gap-4 rounded-xl border border-l-4 bg-card p-4"
+            style={operator?.color ? { borderLeftColor: operator.color } : undefined}
+          >
+            <legend className="sr-only">{operator?.name ?? "Opérateur"}</legend>
+            <p aria-hidden className="font-heading text-xl font-bold">
+              {operator?.name ?? "Opérateur"}
+            </p>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor={`account-${index}`}>
