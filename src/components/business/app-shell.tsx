@@ -20,6 +20,7 @@ async function loadNavigation(): Promise<Navigation | null> {
         ...(can("transaction:view") ? (["operations"] as const) : []),
         ...(can("transaction:create") ? (["entry", "cash"] as const) : []),
         ...(can("closing:validate") ? (["closing"] as const) : []),
+        ...(can("transaction:view") ? (["stats"] as const) : []),
         ...(ctx.actor.role !== "AGENT" ? (["supervision"] as const) : []),
         ...(can("catalog:manage") || can("commissionRule:manage") || can("member:manage") ? (["settings"] as const) : []),
       ],

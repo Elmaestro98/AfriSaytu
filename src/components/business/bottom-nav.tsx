@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils"
 
 // Screens with their own bottom action bar: the navigation steps aside to leave it room.
 const HIDDEN_ON = ["/operations/new"]
-// Five tabs at most on a phone (mockups 04 to 06): supervision and settings are reached from the
-// home screen.
-const DESKTOP_ONLY: readonly NavKey[] = ["supervision", "settings"]
+// Five tabs at most on a phone (mockups 04 to 06): statistics, supervision and settings are
+// reached from the home screen.
+const DESKTOP_ONLY: readonly NavKey[] = ["stats", "supervision", "settings"]
 
 // Phone navigation, within thumb reach (mockups 04 to 06), with "Saisir" in the middle.
 // Hidden on desktop, where the side navigation takes over.

@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server"
-import { Activity, ChartColumn, Coins, Landmark, Lock, Plus, Settings, TrendingUp } from "lucide-react"
+import { Activity, ChartColumn, ChartPie, Coins, Landmark, Lock, Plus, Settings, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
@@ -125,8 +125,10 @@ export default async function DashboardPage() {
           {can("transaction:view") && <RecentOperations operations={recent} />}
         </div>
 
-        {(ctx.actor.role !== "AGENT" || canSettings) && (
+        {(can("transaction:view") || ctx.actor.role !== "AGENT" || canSettings) && (
           <div className="flex flex-col gap-3 lg:hidden">
+            {can("transaction:view") && <SettingsLink href="/stats" icon={ChartPie} title="Statistiques"
+              description={ctx.actor.role === "AGENT" ? "Vos commissions jour, semaine, mois" : "Commissions par opérateur, type et agent"} />}
             {ctx.actor.role !== "AGENT" && <SettingsLink href="/supervision" icon={ChartColumn} title="Supervision" description="Kiosques, agents et écarts de clôture" />}
             {canSettings && <SettingsLink href="/settings" icon={Settings} title="Réglages" description="Points de vente, opérateurs, commissions, équipe" />}
           </div>

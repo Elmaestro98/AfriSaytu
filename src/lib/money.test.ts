@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { formatAmount, formatFCFA, parseAmount } from "@/lib/money"
+import { formatAmount, formatCompactAmount, formatFCFA, parseAmount } from "@/lib/money"
 
 const NBSP = " "
 
@@ -47,5 +47,28 @@ describe("parseAmount", () => {
 
   it("rejects numbers too large to be safe integers", () => {
     expect(parseAmount("99999999999999999999")).toBeNull()
+  })
+})
+
+describe("formatCompactAmount", () => {
+  it("keeps small amounts as they are", () => {
+    expect(formatCompactAmount(0)).toBe("0")
+    expect(formatCompactAmount(850)).toBe("850")
+  })
+
+  it("rounds thousands to k", () => {
+    expect(formatCompactAmount(12_400)).toBe(`12${NBSP}k`)
+    expect(formatCompactAmount(999_499)).toBe(`999${NBSP}k`)
+  })
+
+  it("shows millions with one decimal, without floats", () => {
+    expect(formatCompactAmount(1_000_000)).toBe(`1${NBSP}M`)
+    expect(formatCompactAmount(1_250_000)).toBe(`1,3${NBSP}M`)
+    expect(formatCompactAmount(1_500_000)).toBe(`1,5${NBSP}M`)
+    expect(formatCompactAmount(12_340_000)).toBe(`12,3${NBSP}M`)
+  })
+
+  it("keeps the sign", () => {
+    expect(formatCompactAmount(-2_500)).toBe(`-3${NBSP}k`)
   })
 })

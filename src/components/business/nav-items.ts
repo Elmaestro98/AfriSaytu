@@ -1,7 +1,7 @@
-import { ChartColumn, ClipboardCheck, History, House, Plus, Settings, Wallet, type LucideIcon } from "lucide-react"
+import { ChartColumn, ChartPie, ClipboardCheck, History, House, Plus, Settings, Wallet, type LucideIcon } from "lucide-react"
 
 // Navigation of the signed-in screens, shared by the bottom bar (phone) and the side bar (desktop).
-export type NavKey = "home" | "operations" | "entry" | "cash" | "closing" | "supervision" | "settings"
+export type NavKey = "home" | "operations" | "entry" | "cash" | "closing" | "stats" | "supervision" | "settings"
 
 export const NAV_ITEMS: Record<NavKey, { href: string; label: string; icon: LucideIcon }> = {
   home: { href: "/dashboard", label: "Accueil", icon: House },
@@ -9,6 +9,7 @@ export const NAV_ITEMS: Record<NavKey, { href: string; label: string; icon: Luci
   entry: { href: "/operations/new", label: "Saisir", icon: Plus },
   cash: { href: "/cash", label: "Caisse", icon: Wallet },
   closing: { href: "/closing", label: "Clôture", icon: ClipboardCheck },
+  stats: { href: "/stats", label: "Statistiques", icon: ChartPie },
   supervision: { href: "/supervision", label: "Supervision", icon: ChartColumn },
   settings: { href: "/settings", label: "Réglages", icon: Settings },
 }
