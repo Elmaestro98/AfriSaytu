@@ -89,6 +89,7 @@ export async function validateClosing(ctx: ActorContext, input: ValidateClosingI
   await recordAudit(ctx, {
     action: "closing.validate",
     entity: "DailyClosing",
+    branchId: branch.id,
     after: { branchId: branch.id, totalDifference, formatted: formatFCFA(totalDifference) },
   })
   return { ok: true }

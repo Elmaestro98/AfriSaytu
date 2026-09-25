@@ -2,7 +2,7 @@ import { clerkClient } from "@clerk/nextjs/server"
 
 import type { DeactivateMemberInput } from "@/schemas/team"
 import type { ActorContext } from "@/server/auth/actor"
-import { recordAudit } from "@/server/audit/log"
+import { recordAudit, singleBranch } from "@/server/audit/log"
 import type { ActionResult } from "@/server/result"
 import { planDeactivation } from "@/server/team/rules"
 
@@ -50,6 +50,7 @@ export async function deactivateMember(
     action: "member.deactivate",
     entity: "Member",
     entityId: target.id,
+    branchId: singleBranch(target.branches.map((branch) => branch.branchId)),
     before: { isActive: true },
     after: { isActive: false },
   })

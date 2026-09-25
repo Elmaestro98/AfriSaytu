@@ -2,7 +2,7 @@ import { clerkClient } from "@clerk/nextjs/server"
 
 import type { InviteMemberInput } from "@/schemas/team"
 import type { ActorContext } from "@/server/auth/actor"
-import { recordAudit } from "@/server/audit/log"
+import { recordAudit, singleBranch } from "@/server/audit/log"
 import { getCurrentPlan } from "@/server/plans/current"
 import { PLAN_LABELS, canAddMember } from "@/server/plans/limits"
 import type { ActionResult } from "@/server/result"
@@ -51,6 +51,7 @@ export async function inviteMember(ctx: ActorContext, input: InviteMemberInput):
   await recordAudit(ctx, {
     action: "member.invite",
     entity: "Member",
+    branchId: singleBranch(branchIds),
     after: { email: input.email, role: input.role, branchIds },
   })
 

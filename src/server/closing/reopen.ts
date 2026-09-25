@@ -64,6 +64,7 @@ export async function reopenClosing(ctx: ActorContext, input: ReopenClosingInput
     action: "closing.reopen",
     entity: "DailyClosing",
     entityId: closing.id,
+    branchId: closing.branchId,
     reason: input.reason,
     before: { status: "CLOSED" },
     after: { status: "REOPENED" },

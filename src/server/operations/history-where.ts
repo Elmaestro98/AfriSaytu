@@ -14,20 +14,26 @@ export function visibilityWhere(actor: Actor): Prisma.TransactionWhereInput {
   return { memberId: actor.memberId }
 }
 
-export function periodWhere(period: HistoryFilters["period"], now: Date): Prisma.TransactionWhereInput {
+// Bounds of a period in Dakar days, for any createdAt column. null = no bound ("all").
+export function periodBounds(period: HistoryFilters["period"], now: Date): { gte: Date; lt?: Date } | null {
   const today = startOfDakarDay(now)
   switch (period) {
     case "today":
-      return { createdAt: { gte: today } }
+      return { gte: today }
     case "yesterday":
-      return { createdAt: { gte: new Date(today.getTime() - DAY_MS), lt: today } }
+      return { gte: new Date(today.getTime() - DAY_MS), lt: today }
     case "7d":
-      return { createdAt: { gte: new Date(today.getTime() - 6 * DAY_MS) } }
+      return { gte: new Date(today.getTime() - 6 * DAY_MS) }
     case "30d":
-      return { createdAt: { gte: new Date(today.getTime() - 29 * DAY_MS) } }
+      return { gte: new Date(today.getTime() - 29 * DAY_MS) }
     case "all":
-      return {}
+      return null
   }
+}
+
+export function periodWhere(period: HistoryFilters["period"], now: Date): Prisma.TransactionWhereInput {
+  const bounds = periodBounds(period, now)
+  return bounds ? { createdAt: bounds } : {}
 }
 
 // One search field: a customer number (even partial), an operator reference, or an exact amount.

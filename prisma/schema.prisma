@@ -147,6 +147,7 @@ model Branch {
   transactions Transaction[]
   movements    InternalMovement[]
   closings     DailyClosing[]
+  auditLogs    AuditLog[]
 
   @@index([organizationId])
 }
@@ -478,6 +479,7 @@ model AuditLog {
   id             String   @id @default(cuid())
   organizationId String
   memberId       String?
+  branchId       String? // branch concerned, so a manager sees the events of their branches
   action         String
   entity         String
   entityId       String?
@@ -489,7 +491,9 @@ model AuditLog {
 
   organization Organization @relation(fields: [organizationId], references: [id])
   member       Member?      @relation(fields: [memberId], references: [id])
+  branch       Branch?      @relation(fields: [branchId], references: [id])
 
   @@index([organizationId, createdAt])
+  @@index([organizationId, branchId, createdAt])
   @@index([organizationId, entity, entityId])
 }

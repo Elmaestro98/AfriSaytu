@@ -2,7 +2,7 @@ import { dayKey } from "@/lib/dates"
 import type { HistoryFilters } from "@/lib/history-filters"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
-import { recordAudit } from "@/server/audit/log"
+import { recordAudit, singleBranch } from "@/server/audit/log"
 import { toCsv, toExportRecord } from "@/server/export/operations-file"
 import { toXlsx } from "@/server/export/operations-xlsx"
 import { buildHistoryWhere } from "@/server/operations/history-where"
@@ -75,6 +75,7 @@ export async function exportOperations(
   await recordAudit(ctx, {
     action: "data.export",
     entity: "Transaction",
+    branchId: filters.branch || singleBranch(ctx.actor.branchIds),
     after: { format, count: records.length, filters: { ...filters, limit: undefined } },
   })
 

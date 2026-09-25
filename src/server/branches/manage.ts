@@ -58,6 +58,7 @@ export async function createBranch(ctx: ActorContext, input: CreateBranchInput):
     action: "branch.create",
     entity: "Branch",
     entityId: branchId,
+    branchId,
     after: { name: input.branchName, accounts: rows.accounts.length },
   })
   return { ok: true }
@@ -104,6 +105,7 @@ export async function addOperatorAccount(
     action: "account.create",
     entity: "Account",
     entityId: rows.accounts[0].id,
+    branchId: branch.id,
     after: { branchId: branch.id, operatorId: input.operatorId, openingBalance: input.openingBalance },
   })
   return { ok: true }
@@ -131,6 +133,7 @@ export async function updateAccount(ctx: ActorContext, input: UpdateAccountInput
     action: "account.update",
     entity: "Account",
     entityId: account.id,
+    branchId: account.branchId,
     before: { accountNumber: account.accountNumber, alertThreshold: account.alertThreshold },
     after: { accountNumber, alertThreshold: input.alertThreshold },
   })

@@ -55,6 +55,7 @@ export async function cancelOperation(ctx: ActorContext, input: CancelOperationI
     action: "transaction.cancel",
     entity: "Transaction",
     entityId: operation.id,
+    branchId: operation.branchId,
     reason: input.reason,
     before: { status: "VALID", type: operation.type, amount: operation.amount },
     after: { status: "CANCELLED" },
