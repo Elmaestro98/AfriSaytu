@@ -112,7 +112,7 @@ export function RecentOperations({ operations }: { operations: readonly Operatio
                     </span>
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {[formatTime(operation.createdAt), operation.customerPhone, cancelled ? "Annulée" : operation.noRule ? "Sans règle" : `Comm. +${formatFCFA(operation.commission)}`].filter(Boolean).join(" · ")}
+                    {[formatTime(operation.createdAt), operation.customerPhone, cancelled ? "Annulée" : operation.noRule ? "Sans règle" : operation.dailyCommission ? "Commission du jour" : `Comm. +${formatFCFA(operation.commission)}`].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <span className={cn("font-heading font-bold whitespace-nowrap tabular-nums",

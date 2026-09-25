@@ -17,10 +17,12 @@ import { cn } from "@/lib/utils"
 import { requireActor, type ActorContext } from "@/server/auth/actor"
 import { authorize, type Action } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
+import { loadDailyCommissions } from "@/server/commissions/daily-summary"
 import { getTodaySummary } from "@/server/dashboard/today"
 import { isOrganizationProvisioned } from "@/server/onboarding/queries"
 import { listRecentOperations } from "@/server/operations/queries"
 
+import { DailyCommissionsPanel } from "./daily-commissions"
 import { BalanceCards, RecentOperations } from "./today-sections"
 
 function AccessMessage({ title, text }: { title: string; text: string }) {
@@ -56,10 +58,11 @@ export default async function DashboardPage() {
 
   const now = new Date()
   const can = (action: Action) => authorize(ctx.actor, action).allowed
-  const [organization, today, recent] = await Promise.all([
+  const [organization, today, recent, daily] = await Promise.all([
     ctx.db.organization.findFirst({ select: { name: true } }),
     getTodaySummary(ctx, now),
     can("transaction:view") ? listRecentOperations(ctx, 6, now) : Promise.resolve([]),
+    loadDailyCommissions(ctx, now),
   ])
   const canEnter = can("transaction:create")
   const canSettings = can("catalog:manage") || can("commissionRule:manage") || can("member:manage")
@@ -101,8 +104,10 @@ export default async function DashboardPage() {
         <section aria-label={ctx.actor.role === "AGENT" ? "Votre journée" : "Aujourd'hui"} className="grid gap-3 sm:grid-cols-2 lg:gap-4 xl:grid-cols-4">
           <KpiCard label="Volume du jour" value={formatFCFA(today.volume)} icon={TrendingUp} tone="primary"
             change={{ value: today.volumeChange, label: "vs hier" }} />
-          <KpiCard label="Commissions" value={`+${formatFCFA(today.commission)}`} icon={Coins}
-            change={{ value: today.commissionChange, label: "vs hier" }} />
+          {/* Per-operation commissions + the day's commissions of daily-volume operators. Yesterday is
+              only compared when there is no daily-volume commission (a day in progress vs a full day). */}
+          <KpiCard label="Commissions" value={`+${formatFCFA(today.commission + daily.total)}`} icon={Coins}
+            change={{ value: daily.rows.length > 0 ? null : today.commissionChange, label: "vs hier" }} />
           <KpiCard label="Opérations" value={String(today.count)} icon={Activity}>
             <span className="text-xs text-muted-foreground">
               {today.deposits} dépôt{today.deposits > 1 ? "s" : ""} · {today.withdrawals} retrait{today.withdrawals > 1 ? "s" : ""}
@@ -112,6 +117,8 @@ export default async function DashboardPage() {
             <span className="text-xs text-muted-foreground tabular-nums">UV {formatAmount(today.treasury.uv)} · Espèces {formatAmount(today.treasury.cash)}</span>
           </KpiCard>
         </section>
+
+        {daily.rows.length > 0 && <DailyCommissionsPanel daily={daily} showBranch={today.showBranch} />}
 
         <div className="grid gap-6 xl:grid-cols-3 xl:items-start">
           <div className="xl:col-span-2">

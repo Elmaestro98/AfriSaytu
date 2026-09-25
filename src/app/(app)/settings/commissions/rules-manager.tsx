@@ -34,7 +34,8 @@ export function RulesManager({ rules, operators, roundingMode }: RulesManagerPro
   const desktop = useMediaQuery(DESKTOP_QUERY)
 
   const covered = new Set(rules.map((rule) => rule.operatorId))
-  const uncovered = operators.filter((operator) => !covered.has(operator.id))
+  // Daily-volume operators earn through AfriSaytu's scale, not through the organization's rules.
+  const uncovered = operators.filter((operator) => operator.commissionMode !== "DAILY_VOLUME" && !covered.has(operator.id))
 
   const close = (ruleId: string) => {
     setError(null)

@@ -76,6 +76,14 @@ enum RoundingMode {
   CEIL
 }
 
+// How an operator pays its agents. PER_TRANSACTION: a commission per operation (CommissionRule of
+// each organization). DAILY_VOLUME: one commission per branch and per day, from the day's total of
+// deposits + withdrawals and the operator's tiers (OperatorCommissionTier), set by the SaaS admin.
+enum CommissionMode {
+  PER_TRANSACTION
+  DAILY_VOLUME
+}
+
 enum SubscriptionPlan {
   BASIC
   PRO
@@ -197,20 +205,40 @@ model MemberBranch {
 
 // Global catalogue managed by the SaaS admin. No organizationId on purpose.
 model OperatorCatalog {
-  id             String   @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
-  code           String   @unique
+  code           String         @unique
   logoUrl        String?
   color          String? // theme colour of the operator (hex)
-  isActive       Boolean  @default(true)
+  isActive       Boolean        @default(true)
   defaultEffects Json? // default balance-effect matrix (cahier 6.1), editable per organization
-  createdAt      DateTime @default(now())
+  commissionMode CommissionMode @default(PER_TRANSACTION)
+  createdAt      DateTime       @default(now())
 
   orgOperators    OrgOperator[]
   accounts        Account[]
   transactions    Transaction[]
   commissionRules CommissionRule[]
   logo            OperatorLogo?
+  commissionTiers OperatorCommissionTier[]
+}
+
+// One tier of an operator's daily-volume scale (e.g. Wave: 1 500 000 to 1 999 995 F -> 6 650 F).
+// Global, set by the SaaS admin. Never edited nor deleted: a new scale closes the tiers in force
+// (validTo) and inserts new ones, so a past day is always computed with the scale of that day.
+model OperatorCommissionTier {
+  id         String    @id @default(cuid())
+  operatorId String
+  minAmount  Int // FCFA, inclusive
+  maxAmount  Int? // FCFA, inclusive; null = and above (last tier only)
+  commission Int // FCFA for the whole day
+  validFrom  DateTime  @default(now())
+  validTo    DateTime?
+  createdAt  DateTime  @default(now())
+
+  operator OperatorCatalog @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@index([operatorId, validFrom])
 }
 
 // Logo of a catalogue operator, uploaded by the SaaS admin. Kept apart from OperatorCatalog so

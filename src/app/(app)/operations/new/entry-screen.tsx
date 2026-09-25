@@ -14,6 +14,7 @@ import { applyAmountKey } from "@/lib/amount-keys"
 import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { newUuid } from "@/lib/uuid"
+import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
 import type { Sign } from "@/server/ledger/effects"
 import { computeEntry } from "@/server/operations/compute-entry"
 import type { EntryContext } from "@/server/operations/entry-context"
@@ -53,7 +54,7 @@ export function EntryScreen({ context, branchId }: Props) {
     try {
       return computeEntry(
         { operatorId: operator.id, type, amount, fee: details.fee, commission: details.commission, feeInCash: details.feeInCash, manual: type === "OTHER" ? manual : null },
-        { rules: context.rules, roundingMode: context.roundingMode, effect: operator.effects[type], allowManualCommission: context.allowManualCommission, at: new Date() },
+        { rules: context.rules, roundingMode: context.roundingMode, effect: operator.effects[type], allowManualCommission: context.allowManualCommission, at: new Date(), commissionMode: operator.commissionMode },
         { uvAccountId: operator.uvAccountId, cashAccountId: branch.cashAccountId, uvBalance: operator.uvBalance, cashBalance: branch.cashBalance },
       )
     } catch {
@@ -158,7 +159,8 @@ export function EntryScreen({ context, branchId }: Props) {
           </section>
 
           <div className="order-4">
-            <EntrySummary result={result} operatorName={operator.name} blockNegativeBalance={context.blockNegativeBalance} />
+            <EntrySummary result={result} operatorName={operator.name} blockNegativeBalance={context.blockNegativeBalance}
+              dailyVolume={operator.commissionMode === "DAILY_VOLUME" && DAILY_VOLUME_TYPES.includes(type)} />
           </div>
 
           <div className="sticky bottom-0 order-5 -mx-4 border-t bg-card/95 p-4 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0">

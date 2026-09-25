@@ -29,6 +29,7 @@ const settings: EntrySettings = {
   effect: DEFAULT_EFFECTS.DEPOSIT,
   allowManualCommission: false,
   at: NOW,
+  commissionMode: "PER_TRANSACTION",
 }
 
 const accounts: EntryAccounts = { uvAccountId: "uv", cashAccountId: "cash", uvBalance: 1_130_000, cashBalance: 650_000 }
@@ -103,5 +104,28 @@ describe("computeEntry", () => {
       accounts,
     )
     expect(result.projected).toEqual({ uv: 1_155_000, cash: 625_000 })
+  })
+})
+
+describe("computeEntry with a daily-volume operator (commission on the day's total)", () => {
+  const daily: EntrySettings = { ...settings, commissionMode: "DAILY_VOLUME" }
+
+  it("gives a deposit no commission of its own, without flagging it, and keeps its fee", () => {
+    const ruled = computeEntry(input, settings, accounts)
+    const result = computeEntry(input, daily, accounts)
+    expect(result.commission).toBe(0)
+    expect(result.quote).toMatchObject({ commissionRuleId: null, noRule: false })
+    expect(result.fee).toBe(ruled.fee)
+    expect(result.postings).toEqual(ruled.postings) // balances move exactly the same way
+  })
+
+  it("does not let a manual commission be forced on it", () => {
+    const result = computeEntry({ ...input, commission: 999 }, { ...daily, allowManualCommission: true }, accounts)
+    expect(result).toMatchObject({ commission: 0, commissionManual: false })
+  })
+
+  it("does not flag an unruled operation of another type either", () => {
+    const result = computeEntry({ ...input, type: "AIRTIME" }, { ...daily, rules: [] }, accounts)
+    expect(result.quote.noRule).toBe(false)
   })
 })

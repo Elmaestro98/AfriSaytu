@@ -42,7 +42,7 @@ export function OperationItem({ operation, showAuthor }: { operation: OperationR
             {formatFCFA(operation.amount)}
           </p>
           <p className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
-            {cancelled ? "0 FCFA" : operation.noRule ? "Sans règle" : `Comm. +${formatFCFA(operation.commission)}`}
+            {cancelled ? "0 FCFA" : operation.noRule ? "Sans règle" : operation.dailyCommission ? "Commission du jour" : `Comm. +${formatFCFA(operation.commission)}`}
           </p>
         </div>
       </div>

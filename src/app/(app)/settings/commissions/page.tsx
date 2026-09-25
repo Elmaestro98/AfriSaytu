@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { SessionError } from "@/server/auth/session"
+import { loadScalesInForce } from "@/server/commissions/daily-summary"
 import { listRulesInForce } from "@/server/commissions/manage"
 import { listActiveOrgOperators } from "@/server/operators/manage"
 
+import { DailyScales } from "./daily-scales"
 import { RulesManager } from "./rules-manager"
 
 export default async function CommissionsPage() {
@@ -26,6 +28,8 @@ export default async function CommissionsPage() {
     listActiveOrgOperators(ctx),
     ctx.db.organization.findFirst({ select: { roundingMode: true } }),
   ])
+  const dailyOperators = operators.filter((operator) => operator.commissionMode === "DAILY_VOLUME").map((operator) => operator.id)
+  const scales = await loadScalesInForce(ctx, dailyOperators)
 
   return (
     <div className="flex flex-1 flex-col">
@@ -36,6 +40,7 @@ export default async function CommissionsPage() {
           change jamais les opérations déjà saisies.
         </p>
         <RulesManager rules={rules} operators={operators} roundingMode={organization?.roundingMode ?? "NEAREST"} />
+        <DailyScales operators={operators} scales={scales} />
       </main>
     </div>
   )

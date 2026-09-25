@@ -15,7 +15,7 @@ import { createRuleAction, replaceRuleAction } from "./actions"
 import { RuleAmountFields } from "./rule-fields"
 import { RulePreview } from "./rule-preview"
 
-export type OperatorOption = { id: string; name: string; color: string | null; logoSrc: string | null }
+export type OperatorOption = { id: string; name: string; color: string | null; logoSrc: string | null; commissionMode?: "PER_TRANSACTION" | "DAILY_VOLUME" }
 
 type RuleFormProps = {
   operators: readonly OperatorOption[]

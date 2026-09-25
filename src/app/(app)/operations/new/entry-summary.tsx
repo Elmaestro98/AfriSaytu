@@ -8,10 +8,11 @@ type EntrySummaryProps = {
   result: EntryResult | null
   operatorName: string
   blockNegativeBalance: boolean
+  dailyVolume: boolean // daily-volume operator, deposit or withdrawal: no commission of its own
 }
 
 // What will happen, shown before validation (commission, projected balances, warnings).
-export function EntrySummary({ result, operatorName, blockNegativeBalance }: EntrySummaryProps) {
+export function EntrySummary({ result, operatorName, blockNegativeBalance, dailyVolume }: EntrySummaryProps) {
   if (!result) {
     return <p className="rounded-2xl bg-muted p-4 text-sm text-muted-foreground">Saisissez un montant pour voir la commission et les soldes.</p>
   }
@@ -27,7 +28,9 @@ export function EntrySummary({ result, operatorName, blockNegativeBalance }: Ent
           <Coins className="size-4" aria-hidden />
           Commission estimée
         </span>
-        {result.quote.noRule && !result.commissionManual ? (
+        {dailyVolume ? (
+          <span className="text-sm font-semibold">Comptée dans la commission du jour</span>
+        ) : result.quote.noRule && !result.commissionManual ? (
           <span className="text-sm font-semibold text-muted-foreground">Sans règle</span>
         ) : (
           <span className="font-heading text-lg font-bold text-primary tabular-nums">+{formatFCFA(result.commission)}</span>

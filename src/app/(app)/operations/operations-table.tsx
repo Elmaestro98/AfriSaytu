@@ -67,7 +67,8 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
                     {formatFCFA(operation.amount)}
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap tabular-nums">
-                    {cancelled ? "—" : operation.noRule ? <span className="text-muted-foreground">Sans règle</span> : `+${formatFCFA(operation.commission)}`}
+                    {cancelled ? "—" : operation.noRule ? <span className="text-muted-foreground">Sans règle</span>
+                      : operation.dailyCommission ? <span className="text-muted-foreground">Du jour</span> : `+${formatFCFA(operation.commission)}`}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {operation.canCancel && cancellingId !== operation.id && (

@@ -3,6 +3,7 @@ import type { TransactionType } from "@/generated/prisma/enums"
 import { operatorLogoSrc } from "@/lib/operator-logo"
 import { formatPhone, maskPhone } from "@/lib/phone"
 import type { ActorContext } from "@/server/auth/actor"
+import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
 import { planCancellation } from "@/server/operations/cancel-rules"
 import { visibilityWhere } from "@/server/operations/history-where"
 
@@ -13,6 +14,7 @@ export type OperationRow = {
   fee: number
   commission: number
   noRule: boolean
+  dailyCommission: boolean // deposit/withdrawal of a daily-volume operator: earns via the day's total
   operatorName: string
   operatorColor: string | null
   operatorLogoSrc: string | null
@@ -41,7 +43,7 @@ export const OPERATION_SELECT = {
   branchId: true,
   memberId: true,
   closingId: true,
-  operator: { select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } } },
+  operator: { select: { id: true, name: true, color: true, commissionMode: true, logo: { select: { updatedAt: true } } } },
   branch: { select: { name: true } },
   member: { select: { name: true } },
 } satisfies Prisma.TransactionSelect
@@ -58,6 +60,7 @@ export function toOperationRow(ctx: ActorContext, operation: SelectedOperation, 
     fee: operation.fee,
     commission: operation.commission,
     noRule: operation.noRule,
+    dailyCommission: operation.operator.commissionMode === "DAILY_VOLUME" && DAILY_VOLUME_TYPES.includes(operation.type) && operation.commission === 0,
     operatorName: operation.operator.name,
     operatorColor: operation.operator.color,
     operatorLogoSrc: operatorLogoSrc(operation.operator.id, operation.operator.logo?.updatedAt),

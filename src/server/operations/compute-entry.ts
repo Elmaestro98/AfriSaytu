@@ -1,4 +1,5 @@
-import type { RoundingMode, TransactionType } from "@/generated/prisma/enums"
+import type { CommissionMode, RoundingMode, TransactionType } from "@/generated/prisma/enums"
+import { DAILY_VOLUME_TYPES, perOperationQuote } from "@/server/commissions/daily"
 import { quoteOperation, type Quote, type Rule } from "@/server/commissions/resolve"
 import type { Sign, TypeEffect } from "@/server/ledger/effects"
 import { transactionPostings, type Posting } from "@/server/ledger/postings"
@@ -22,6 +23,7 @@ export type EntrySettings = {
   effect: TypeEffect // effect of this operator and type, already resolved
   allowManualCommission: boolean
   at: Date
+  commissionMode: CommissionMode // of this operator: DAILY_VOLUME = commission on the day's total
 }
 
 export type EntryAccounts = {
@@ -43,14 +45,17 @@ export type EntryResult = {
 }
 
 export function computeEntry(input: EntryInput, settings: EntrySettings, accounts: EntryAccounts): EntryResult {
-  const quote = quoteOperation(
+  const ruled = quoteOperation(
     settings.rules,
     { operatorId: input.operatorId, type: input.type, amount: input.amount, at: settings.at },
     settings.roundingMode,
   )
+  const daily = settings.commissionMode === "DAILY_VOLUME"
+  const quote = daily ? perOperationQuote(ruled, input.type) : ruled
 
   const fee = input.fee ?? quote.fee
-  const commissionManual = settings.allowManualCommission && input.commission !== null
+  // A deposit or withdrawal of a daily-volume operator earns through the day's total only.
+  const commissionManual = settings.allowManualCommission && input.commission !== null && !(daily && DAILY_VOLUME_TYPES.includes(input.type))
   const commission = commissionManual ? (input.commission as number) : quote.commission
 
   const postings = transactionPostings({

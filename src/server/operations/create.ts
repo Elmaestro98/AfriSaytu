@@ -3,6 +3,7 @@ import { LedgerReason } from "@/generated/prisma/enums"
 import { formatFCFA } from "@/lib/money"
 import { TYPE_LABELS } from "@/lib/operation-types"
 import type { CreateOperationInput } from "@/schemas/operation"
+import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { computeEntry } from "@/server/operations/compute-entry"
@@ -54,6 +55,7 @@ export async function createOperation(ctx: ActorContext, input: CreateOperationI
       roundingMode: entry.roundingMode,
       effect: operator.effects[input.type],
       allowManualCommission: entry.allowManualCommission,
+      commissionMode: operator.commissionMode,
       at: now,
     },
     { uvAccountId: operator.uvAccountId, cashAccountId: branch.cashAccountId, uvBalance: operator.uvBalance, cashBalance: branch.cashBalance },
@@ -133,7 +135,11 @@ export async function createOperation(ctx: ActorContext, input: CreateOperationI
     return {
       ok: true,
       transactionId: created.id,
-      message: result.quote.noRule ? `${label} (sans règle de commission).` : `${label}. Commission ${formatFCFA(result.commission)}.`,
+      message: result.quote.noRule
+        ? `${label} (sans règle de commission).`
+        : operator.commissionMode === "DAILY_VOLUME" && DAILY_VOLUME_TYPES.includes(input.type)
+          ? `${label}. Compte dans la commission du jour.`
+          : `${label}. Commission ${formatFCFA(result.commission)}.`,
       warning: result.goesNegative.length > 0 ? "Attention : un solde est maintenant négatif." : null,
     }
   } catch (error) {

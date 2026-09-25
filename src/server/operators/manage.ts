@@ -45,7 +45,7 @@ export async function listOrgOperators(ctx: ActorContext): Promise<OrgOperatorRo
 export async function listActiveOrgOperators(ctx: ActorContext) {
   const rows = await ctx.db.orgOperator.findMany({
     where: { isActive: true, operator: { isActive: true } },
-    select: { operator: { select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } } } },
+    select: { operator: { select: { id: true, name: true, color: true, commissionMode: true, logo: { select: { updatedAt: true } } } } },
   })
   return rows.map(({ operator: { logo, ...operator } }) => ({ ...operator, logoSrc: operatorLogoSrc(operator.id, logo?.updatedAt) }))
 }

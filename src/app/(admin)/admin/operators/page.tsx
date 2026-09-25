@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { OperatorBadge } from "@/components/business/operator-badge"
@@ -58,6 +59,10 @@ export default async function AdminOperatorsPage({ searchParams }: PageProps<"/a
                   {operator.isActive ? "Actif" : "Désactivé"}
                 </span>
               </div>
+              <Link href={`/admin/operators/${operator.id}`}
+                className="flex h-11 items-center justify-center rounded-xl border font-semibold hover:bg-accent">
+                Barème de commission
+              </Link>
               {!operator.logoUpdatedAt && <p className="text-sm font-semibold text-brand-accent-strong">Pas encore de logo : ajoutez-en un ci-dessous.</p>}
               <details className="rounded-xl border p-3">
                 <summary className="cursor-pointer text-sm font-semibold">Modifier le nom, la couleur ou le logo</summary>
