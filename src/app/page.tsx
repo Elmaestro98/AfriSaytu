@@ -1,10 +1,24 @@
+import { auth } from "@clerk/nextjs/server"
+import Image from "next/image"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth()
+  if (userId) redirect("/dashboard")
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 p-6 text-center">
+      <Image
+        src="/logo.png"
+        alt="Logo AfriSaytu"
+        width={408}
+        height={612}
+        priority
+        className="h-44 w-auto"
+      />
       <div className="flex flex-col gap-3">
         <h1 className="text-4xl font-bold tracking-tight text-primary">AfriSaytu</h1>
         <p className="max-w-md text-lg text-muted-foreground">

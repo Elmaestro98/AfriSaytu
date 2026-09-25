@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   title: "AfriSaytu",
   description:
     "Le logiciel de caisse des agents de transfert d'argent : soldes, commissions, clôture journalière.",
+  icons: { icon: "/logo.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
