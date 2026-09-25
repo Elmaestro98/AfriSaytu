@@ -5,6 +5,7 @@ import { PAYMENT_PROVIDER_LABELS } from "@/schemas/admin"
 import { PLAN_LABELS, PLAN_MONTHLY_PRICE } from "@/server/plans/limits"
 
 import { changePlanAction, extendTrialAction, reactivateAction, recordPaymentAction, suspendAction } from "./actions"
+import { SubmitButton } from "./submit-button"
 
 const INPUT = "h-11 w-full rounded-xl border bg-background px-3 text-sm"
 const LABEL = "flex flex-col gap-1 text-sm font-semibold"
@@ -21,10 +22,7 @@ function Card({ title, action, organizationId, danger, children }: {
       <h3 className="font-heading font-bold">{title}</h3>
       <input type="hidden" name="organizationId" value={organizationId} />
       {children}
-      <button type="submit"
-        className={danger ? "h-11 rounded-xl bg-destructive font-semibold text-white" : "h-11 rounded-xl bg-primary font-semibold text-primary-foreground"}>
-        Valider
-      </button>
+      <SubmitButton danger={danger} />
     </form>
   )
 }
