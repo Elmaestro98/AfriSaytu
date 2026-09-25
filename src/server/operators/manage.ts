@@ -1,3 +1,4 @@
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { SetOperatorActiveInput, SetSendFeeInput } from "@/schemas/settings"
 import { resolveEffects, sendFeeFromUv, withSendFeeFromUv } from "@/server/ledger/effects"
 import type { ActorContext } from "@/server/auth/actor"
@@ -10,6 +11,7 @@ export type OrgOperatorRow = {
   operatorId: string
   name: string
   color: string | null
+  logoSrc: string | null
   isActive: boolean // active for this organization
   sendFeeFromUv: boolean // SEND: is the customer fee also taken from the agent's UV?
 }
@@ -20,7 +22,7 @@ export async function listOrgOperators(ctx: ActorContext): Promise<OrgOperatorRo
     ctx.db.operatorCatalog.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, color: true, defaultEffects: true },
+      select: { id: true, name: true, color: true, defaultEffects: true, logo: { select: { updatedAt: true } } },
     }),
     ctx.db.orgOperator.findMany({ select: { operatorId: true, isActive: true, effectsConfig: true } }),
   ])
@@ -32,6 +34,7 @@ export async function listOrgOperators(ctx: ActorContext): Promise<OrgOperatorRo
       operatorId: operator.id,
       name: operator.name,
       color: operator.color,
+      logoSrc: operatorLogoSrc(operator.id, operator.logo?.updatedAt),
       isActive: activation?.isActive ?? false,
       sendFeeFromUv: sendFeeFromUv(resolveEffects(operator.defaultEffects, activation?.effectsConfig)),
     }
@@ -42,9 +45,9 @@ export async function listOrgOperators(ctx: ActorContext): Promise<OrgOperatorRo
 export async function listActiveOrgOperators(ctx: ActorContext) {
   const rows = await ctx.db.orgOperator.findMany({
     where: { isActive: true, operator: { isActive: true } },
-    select: { operator: { select: { id: true, name: true, color: true } } },
+    select: { operator: { select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } } } },
   })
-  return rows.map((row) => row.operator)
+  return rows.map(({ operator: { logo, ...operator } }) => ({ ...operator, logoSrc: operatorLogoSrc(operator.id, logo?.updatedAt) }))
 }
 
 // Switching an operator on or off applies to every branch, so it is kept to the owner

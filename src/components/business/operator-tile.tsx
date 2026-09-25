@@ -2,29 +2,19 @@
 
 import { Check } from "lucide-react"
 
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { cn } from "@/lib/utils"
 
 type OperatorTileProps = {
   name: string
   color: string | null // operator theme colour, comes from the catalogue
+  logoSrc: string | null
   selected: boolean
   onToggle: () => void
 }
 
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .filter((word) => word.toLowerCase() !== "by")
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-}
-
 // Large tappable tile (well above 44 px) for choosing an operator.
-export function OperatorTile({ name, color, selected, onToggle }: OperatorTileProps) {
-  const accent = color ?? "var(--primary)"
-
+export function OperatorTile({ name, color, logoSrc, selected, onToggle }: OperatorTileProps) {
   return (
     <button
       type="button"
@@ -36,12 +26,7 @@ export function OperatorTile({ name, color, selected, onToggle }: OperatorTilePr
         selected ? "border-primary bg-accent" : "border-border",
       )}
     >
-      <span
-        className="flex size-12 items-center justify-center rounded-full text-lg font-bold"
-        style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 16%, white)` }}
-      >
-        {initials(name)}
-      </span>
+      <OperatorBadge name={name} color={color} logoSrc={logoSrc} />
       {name}
       {selected && (
         <span className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">

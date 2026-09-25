@@ -19,9 +19,9 @@ const toPosix = (path: string) => relative(SRC, path).split(sep).join("/")
 
 describe("unscoped database access", () => {
   // Files allowed to reach the database without the organization filter.
-  const ALLOWED = new Set(["server/db/client.ts", "server/db/index.ts", "server/onboarding/queries.ts", "app/(app)/onboarding/actions.ts", "server/admin/db.ts"])
+  const ALLOWED = new Set(["server/db/client.ts", "server/db/index.ts", "server/onboarding/queries.ts", "app/(app)/onboarding/actions.ts", "server/admin/db.ts", "server/operators/logo-store.ts"])
 
-  it("is limited to the db module, onboarding and the admin console", () => {
+  it("is limited to the db module, onboarding, the admin console and the global logo reader", () => {
     const users = sourceFiles(SRC).filter((path) => readFileSync(path, "utf8").includes("getBaseClient")).map(toPosix)
     expect(users.filter((path) => !ALLOWED.has(path))).toEqual([])
   })

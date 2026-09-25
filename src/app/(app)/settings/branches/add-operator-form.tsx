@@ -55,6 +55,7 @@ export function AddOperatorForm({ branchId, operators }: AddOperatorFormProps) {
             key={operator.id}
             name={operator.name}
             color={operator.color}
+            logoSrc={operator.logoSrc}
             selected={operatorId === operator.id}
             onToggle={() => setOperatorId(operator.id)}
           />

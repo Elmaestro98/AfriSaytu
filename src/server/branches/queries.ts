@@ -18,7 +18,7 @@ export type BranchRow = {
   name: string
   address: string | null
   accounts: AccountRow[]
-  addableOperators: { id: string; name: string; color: string | null }[]
+  addableOperators: { id: string; name: string; color: string | null; logoSrc: string | null }[]
 }
 
 // Branches the current user manages: all for the owner, their own for a manager.

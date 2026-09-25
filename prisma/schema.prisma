@@ -210,6 +210,18 @@ model OperatorCatalog {
   accounts        Account[]
   transactions    Transaction[]
   commissionRules CommissionRule[]
+  logo            OperatorLogo?
+}
+
+// Logo of a catalogue operator, uploaded by the SaaS admin. Kept apart from OperatorCatalog so
+// the image is never loaded by a list query; served by /api/operators/[operatorId]/logo.
+model OperatorLogo {
+  operatorId String   @id
+  mimeType   String // image/png, image/jpeg or image/webp, checked from the bytes
+  data       Bytes
+  updatedAt  DateTime @updatedAt
+
+  operator OperatorCatalog @relation(fields: [operatorId], references: [id], onDelete: Cascade)
 }
 
 // Operator activated by an organization.

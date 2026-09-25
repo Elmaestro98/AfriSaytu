@@ -1,6 +1,7 @@
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import { getBaseClient } from "@/server/db/client"
 
-export type ActiveOperator = { id: string; name: string; color: string | null }
+export type ActiveOperator = { id: string; name: string; color: string | null; logoSrc: string | null }
 
 // The organization row is created by the onboarding. Until then, a signed-in user must be sent
 // to /onboarding. Looked up by the Clerk organization id taken from the session.
@@ -14,9 +15,10 @@ export async function isOrganizationProvisioned(clerkOrgId: string): Promise<boo
 
 // Global operator catalogue (no tenant): operators an organization can activate.
 export async function listActiveOperators(): Promise<ActiveOperator[]> {
-  return getBaseClient().operatorCatalog.findMany({
+  const rows = await getBaseClient().operatorCatalog.findMany({
     where: { isActive: true },
-    select: { id: true, name: true, color: true },
+    select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } },
     orderBy: { name: "asc" },
   })
+  return rows.map(({ logo, ...row }) => ({ ...row, logoSrc: operatorLogoSrc(row.id, logo?.updatedAt) }))
 }

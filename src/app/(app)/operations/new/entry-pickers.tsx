@@ -3,6 +3,7 @@
 import { ArrowDownToLine, ArrowUpFromLine, Ellipsis, ReceiptText, Send, Smartphone, type LucideIcon } from "lucide-react"
 
 import type { TransactionType } from "@/generated/prisma/enums"
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { TRANSACTION_TYPES, TYPE_LABELS } from "@/lib/operation-types"
 import { cn } from "@/lib/utils"
 import type { EntryOperator } from "@/server/operations/entry-context"
@@ -14,16 +15,6 @@ const TYPE_ICONS: Record<TransactionType, LucideIcon> = {
   AIRTIME: Smartphone,
   BILL: ReceiptText,
   OTHER: Ellipsis,
-}
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .filter((word) => word.toLowerCase() !== "by")
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
 }
 
 type OperatorPickerProps = {
@@ -52,12 +43,7 @@ export function OperatorPicker({ operators, value, onChange }: OperatorPickerPro
             )}
             style={selected ? { color } : undefined}
           >
-            <span
-              className="flex size-10 items-center justify-center rounded-full font-heading font-bold"
-              style={{ color, backgroundColor: `color-mix(in srgb, ${color} 16%, white)` }}
-            >
-              {initials(operator.name)}
-            </span>
+            <OperatorBadge name={operator.name} color={operator.color} logoSrc={operator.logoSrc} className="size-10 font-heading text-base" />
             <span className="truncate text-foreground">{operator.name}</span>
           </button>
         )

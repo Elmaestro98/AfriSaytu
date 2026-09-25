@@ -35,6 +35,7 @@ export function OperatorsStep({ catalog }: { catalog: readonly ActiveOperator[] 
             key={operator.id}
             name={operator.name}
             color={operator.color}
+            logoSrc={operator.logoSrc}
             selected={fields.some((field) => field.operatorId === operator.id)}
             onToggle={() => toggle(operator)}
           />

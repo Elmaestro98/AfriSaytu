@@ -15,7 +15,7 @@ import { createRuleAction, replaceRuleAction } from "./actions"
 import { RuleAmountFields } from "./rule-fields"
 import { RulePreview } from "./rule-preview"
 
-export type OperatorOption = { id: string; name: string; color: string | null }
+export type OperatorOption = { id: string; name: string; color: string | null; logoSrc: string | null }
 
 type RuleFormProps = {
   operators: readonly OperatorOption[]
@@ -86,6 +86,7 @@ export function RuleForm({ operators, roundingMode, editing, onDone }: RuleFormP
                       key={operator.id}
                       name={operator.name}
                       color={operator.color}
+            logoSrc={operator.logoSrc}
                       selected={field.value === operator.id}
                       onToggle={() => field.onChange(operator.id)}
                     />

@@ -1,4 +1,5 @@
 import type { RoundingMode, TransactionType } from "@/generated/prisma/enums"
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { ActorContext } from "@/server/auth/actor"
 import type { Rule } from "@/server/commissions/resolve"
 import { getBalances } from "@/server/ledger/balances"
@@ -10,6 +11,7 @@ export type EntryOperator = {
   id: string
   name: string
   color: string | null
+  logoSrc: string | null
   uvAccountId: string
   uvBalance: number
   effects: EffectMatrix
@@ -47,7 +49,7 @@ export async function loadEntryContext(ctx: ActorContext, now = new Date()): Pro
         name: true,
         accounts: {
           where: { isActive: true },
-          select: { id: true, kind: true, operatorId: true, operator: { select: { name: true, color: true, isActive: true, defaultEffects: true } } },
+          select: { id: true, kind: true, operatorId: true, operator: { select: { name: true, color: true, isActive: true, defaultEffects: true, logo: { select: { updatedAt: true } } } } },
         },
       },
     }),
@@ -77,6 +79,7 @@ export async function loadEntryContext(ctx: ActorContext, now = new Date()): Pro
         id: account.operatorId,
         name: operator.name,
         color: operator.color,
+        logoSrc: operatorLogoSrc(account.operatorId, operator.logo?.updatedAt),
         uvAccountId: account.id,
         uvBalance: balances.get(account.id) ?? 0,
         effects: resolveEffects(operator.defaultEffects, activeOperators.get(account.operatorId)),

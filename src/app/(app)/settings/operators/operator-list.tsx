@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { OrgOperatorRow } from "@/server/operators/manage"
@@ -94,7 +95,10 @@ export function OperatorList({ operators, canToggle }: OperatorListProps) {
             style={operator.color ? { borderLeftColor: operator.color } : undefined}
           >
             <div className="flex items-center justify-between gap-3">
-              <p className="font-heading text-xl font-bold">{operator.name}</p>
+              <span className="flex min-w-0 items-center gap-3">
+                <OperatorBadge name={operator.name} color={operator.color} logoSrc={operator.logoSrc} className="size-11" />
+                <span className="truncate font-heading text-xl font-bold">{operator.name}</span>
+              </span>
               <span
                 className={cn(
                   "rounded-full px-3 py-1 text-xs font-semibold",
