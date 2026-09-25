@@ -1,3 +1,4 @@
+import { isDayKey } from "@/lib/dates"
 import { TRANSACTION_TYPES, type TransactionTypeKey } from "@/lib/operation-types"
 
 // History filters live in the page address (?period=7d&type=DEPOSIT…): shareable links, and the
@@ -20,9 +21,15 @@ export type StatusFilter = (typeof STATUSES)[number]
 export const PAGE_SIZE = 50
 export const MAX_LIMIT = 500
 
+// A chosen range of Dakar days, both included ("2026-09-01" to "2026-09-15"). When set, it
+// replaces the period. At most a year, so an export stays reasonable.
+export type DayRange = { from: string; to: string }
+export const MAX_RANGE_DAYS = 366
+
 export type HistoryFilters = {
   q: string // customer number, reference or amount
   period: Period
+  range: DayRange | null
   operator: string | null
   type: TransactionTypeKey | null
   status: StatusFilter | null
@@ -34,6 +41,7 @@ export type HistoryFilters = {
 export const DEFAULT_FILTERS: HistoryFilters = {
   q: "",
   period: "today",
+  range: null,
   operator: null,
   type: null,
   status: null,
@@ -56,11 +64,22 @@ function id(value: string | undefined): string | null {
   return value && /^[A-Za-z0-9_-]{1,64}$/.test(value) ? value : null
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// Both days valid, in order (swapped if typed backwards), a year at most; otherwise no range.
+export function parseRange(fromValue: string | undefined, toValue: string | undefined): DayRange | null {
+  if (!fromValue || !toValue || !isDayKey(fromValue) || !isDayKey(toValue)) return null
+  const [from, to] = fromValue <= toValue ? [fromValue, toValue] : [toValue, fromValue]
+  const days = (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS + 1
+  return days <= MAX_RANGE_DAYS ? { from, to } : null
+}
+
 export function parseHistoryFilters(params: Params): HistoryFilters {
   const limit = Number(first(params.limit))
   return {
     q: (first(params.q) ?? "").trim().slice(0, 40),
     period: oneOf(first(params.period), PERIODS) ?? DEFAULT_FILTERS.period,
+    range: parseRange(first(params.from), first(params.to)),
     operator: id(first(params.operator)),
     type: oneOf(first(params.type), TRANSACTION_TYPES),
     status: oneOf(first(params.status), STATUSES),
@@ -74,7 +93,10 @@ export function parseHistoryFilters(params: Params): HistoryFilters {
 export function historyQueryString(filters: HistoryFilters): string {
   const params = new URLSearchParams()
   if (filters.q) params.set("q", filters.q)
-  if (filters.period !== DEFAULT_FILTERS.period) params.set("period", filters.period)
+  if (filters.range) {
+    params.set("from", filters.range.from)
+    params.set("to", filters.range.to)
+  } else if (filters.period !== DEFAULT_FILTERS.period) params.set("period", filters.period)
   if (filters.operator) params.set("operator", filters.operator)
   if (filters.type) params.set("type", filters.type)
   if (filters.status) params.set("status", filters.status)

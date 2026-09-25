@@ -82,3 +82,15 @@ const monthFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, mont
 export function formatMonth(key: string): string {
   return monthFormat.format(new Date(`${key}-15T12:00:00.000Z`))
 }
+
+// "2026-09-15": a real calendar day (not 2026-02-30).
+export function isDayKey(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && dayKey(new Date(`${value}T12:00:00.000Z`)) === value
+}
+
+const shortDateFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, day: "numeric", month: "short", year: "numeric" })
+
+// "2026-09-15" -> "15 sept. 2026"
+export function formatDayKey(key: string): string {
+  return shortDateFormat.format(new Date(`${key}T12:00:00.000Z`))
+}

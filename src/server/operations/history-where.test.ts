@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { DEFAULT_FILTERS } from "@/lib/history-filters"
 import type { Actor } from "@/server/auth/permissions"
-import { buildHistoryWhere, periodWhere, searchWhere } from "@/server/operations/history-where"
+import { buildHistoryWhere, periodWhere, rangeWhere, searchWhere } from "@/server/operations/history-where"
 
 const NOW = new Date("2026-09-25T15:00:00.000Z")
 const owner: Actor = { memberId: "owner", role: "OWNER", branchIds: [] }
@@ -76,5 +76,18 @@ describe("buildHistoryWhere with the plan retention", () => {
 
   it("adds nothing when the plan shows everything", () => {
     expect(buildHistoryWhere({ ...DEFAULT_FILTERS, period: "all" }, owner, NOW, null)).toEqual({ AND: [] })
+  })
+})
+
+describe("rangeWhere (du ... au ...)", () => {
+  it("covers both days entirely, in Dakar time", () => {
+    expect(rangeWhere({ from: "2026-09-01", to: "2026-09-15" })).toEqual({
+      createdAt: { gte: new Date("2026-09-01T00:00:00.000Z"), lte: new Date("2026-09-15T23:59:59.999Z") },
+    })
+  })
+
+  it("replaces the period, and combines with the operator", () => {
+    const where = buildHistoryWhere({ ...DEFAULT_FILTERS, range: { from: "2026-09-01", to: "2026-09-15" }, operator: "wave" }, owner, NOW)
+    expect(where).toEqual({ AND: [rangeWhere({ from: "2026-09-01", to: "2026-09-15" }), { operatorId: "wave" }] })
   })
 })

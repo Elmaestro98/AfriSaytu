@@ -107,3 +107,13 @@ export function toCsv(records: readonly ExportRecord[]): string {
   const lines = records.map((record) => EXPORT_COLUMNS.map((column) => csvCell(record[column.key])).join(";"))
   return CSV_BOM + [header, ...lines].join("\r\n") + "\r\n"
 }
+
+// "afrisaytu-wave-2026-09-01-au-2026-09-15.xlsx": what was exported, in the file name.
+// Only letters, digits and dashes: safe in a download header and on every system.
+export function exportFileName(parts: { operatorCode: string | null; range: { from: string; to: string } | null; period: string; today: string }, format: "csv" | "xlsx"): string {
+  const slug = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+  const what = parts.operatorCode ? slug(parts.operatorCode) : "operations"
+  const when = parts.range ? `${parts.range.from}-au-${parts.range.to}` : parts.period === "all" ? `au-${parts.today}` : `${slug(parts.period)}-${parts.today}`
+  return `afrisaytu-${what}-${when}.${format}`
+}
+

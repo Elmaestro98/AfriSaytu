@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client"
 import { startOfDakarDay } from "@/lib/dates"
-import type { HistoryFilters } from "@/lib/history-filters"
+import type { DayRange, HistoryFilters } from "@/lib/history-filters"
 import { MAX_AMOUNT } from "@/schemas/onboarding"
 import type { Actor } from "@/server/auth/permissions"
 
@@ -36,6 +36,11 @@ export function periodWhere(period: HistoryFilters["period"], now: Date): Prisma
   return bounds ? { createdAt: bounds } : {}
 }
 
+// A chosen range of Dakar days, both included (Dakar is UTC+0 all year).
+export function rangeWhere(range: DayRange): Prisma.TransactionWhereInput {
+  return { createdAt: { gte: new Date(`${range.from}T00:00:00.000Z`), lte: new Date(`${range.to}T23:59:59.999Z`) } }
+}
+
 // One search field: a customer number (even partial), an operator reference, or an exact amount.
 export function searchWhere(q: string): Prisma.TransactionWhereInput {
   const text = q.trim()
@@ -59,7 +64,7 @@ export function searchWhere(q: string): Prisma.TransactionWhereInput {
 export function buildHistoryWhere(filters: HistoryFilters, actor: Actor, now: Date, since: Date | null = null): Prisma.TransactionWhereInput {
   const conditions: Prisma.TransactionWhereInput[] = [
     visibilityWhere(actor),
-    periodWhere(filters.period, now),
+    filters.range ? rangeWhere(filters.range) : periodWhere(filters.period, now),
     searchWhere(filters.q),
   ]
   if (since) conditions.push({ createdAt: { gte: since } })

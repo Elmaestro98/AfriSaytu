@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { CSV_BOM, EXPORT_COLUMNS, toCsv, toExportRecord, type ExportSource } from "@/server/export/operations-file"
+import { CSV_BOM, EXPORT_COLUMNS, exportFileName, toCsv, toExportRecord, type ExportSource } from "@/server/export/operations-file"
 
 const source: ExportSource = {
   createdAt: new Date("2026-09-25T14:32:00.000Z"),
@@ -70,3 +70,16 @@ describe("commission mode column", () => {
     expect(toExportRecord(source, false).commissionMode).toBe("Par opération")
   })
 })
+
+describe("exportFileName", () => {
+  it("names the operator and the chosen days", () => {
+    expect(exportFileName({ operatorCode: "Wave", range: { from: "2026-09-01", to: "2026-09-15" }, period: "today", today: "2026-09-25" }, "xlsx"))
+      .toBe("afrisaytu-wave-2026-09-01-au-2026-09-15.xlsx")
+  })
+
+  it("keeps only safe characters", () => {
+    expect(exportFileName({ operatorCode: "Mixx by Yas", range: null, period: "7d", today: "2026-09-25" }, "csv")).toBe("afrisaytu-mixx-by-yas-7d-2026-09-25.csv")
+    expect(exportFileName({ operatorCode: null, range: null, period: "all", today: "2026-09-25" }, "csv")).toBe("afrisaytu-operations-au-2026-09-25.csv")
+  })
+})
+

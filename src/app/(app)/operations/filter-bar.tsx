@@ -4,12 +4,15 @@ import { ChevronDown, LoaderCircle, Search, X } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 
+import { dayKey } from "@/lib/dates"
 import {
   DEFAULT_FILTERS,
+  MAX_RANGE_DAYS,
   PAGE_SIZE,
   PERIODS,
   PERIOD_LABELS,
   historyQueryString,
+  parseRange,
   type HistoryFilters,
 } from "@/lib/history-filters"
 import { TRANSACTION_TYPES, TYPE_LABELS } from "@/lib/operation-types"
@@ -17,6 +20,8 @@ import { cn } from "@/lib/utils"
 import type { HistoryOptions } from "@/server/operations/history"
 
 const SEARCH_DELAY_MS = 400
+const CUSTOM = "custom"
+const DAY_MS = 24 * 60 * 60 * 1000
 
 type Choice = { value: string; label: string }
 
@@ -55,6 +60,18 @@ export function FilterBar({ filters, options }: { filters: HistoryFilters; optio
   const pathname = usePathname()
   const [text, setText] = useState(filters.q)
   const [isPending, startTransition] = useTransition()
+  // "Période personnalisée": two days, applied together. Default: the last 7 days.
+  const [today] = useState(() => dayKey(new Date()))
+  const [showRange, setShowRange] = useState(filters.range !== null)
+  const [from, setFrom] = useState(() => filters.range?.from ?? dayKey(new Date(Date.now() - 6 * DAY_MS)))
+  const [to, setTo] = useState(() => filters.range?.to ?? today)
+  const [rangeError, setRangeError] = useState<string | null>(null)
+  const applyRange = () => {
+    const range = parseRange(from, to)
+    if (!range) return setRangeError(`Choisissez deux dates valides, sur ${MAX_RANGE_DAYS} jours au plus.`)
+    setRangeError(null)
+    apply({ range })
+  }
 
   // A transition keeps the current results on screen while the new ones load (no blank page,
   // and the search field keeps the focus).
@@ -94,10 +111,37 @@ export function FilterBar({ filters, options }: { filters: HistoryFilters; optio
         ) : null}
       </div>
 
+      {showRange && (
+        <div className="flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-3">
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            Du
+            <input type="date" value={from} max={to} onChange={(event) => setFrom(event.target.value)}
+              className="h-11 rounded-xl border bg-background px-3 text-base" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            Au
+            <input type="date" value={to} min={from} max={today} onChange={(event) => setTo(event.target.value)}
+              className="h-11 rounded-xl border bg-background px-3 text-base" />
+          </label>
+          <button type="button" onClick={applyRange} className="h-11 rounded-xl bg-primary px-5 font-semibold text-primary-foreground">
+            Appliquer
+          </button>
+          {rangeError && <p role="alert" className="w-full text-sm font-medium text-destructive">{rangeError}</p>}
+        </div>
+      )}
+
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
-        <FilterSelect label="Période" value={filters.period === DEFAULT_FILTERS.period ? null : filters.period}
-          choices={PERIODS.filter((period) => period !== DEFAULT_FILTERS.period).map((period) => ({ value: period, label: PERIOD_LABELS[period] }))}
-          allLabel={PERIOD_LABELS[DEFAULT_FILTERS.period]} onChange={(value) => apply({ period: (value as HistoryFilters["period"]) ?? DEFAULT_FILTERS.period })} />
+        <FilterSelect label="Période" value={showRange ? CUSTOM : filters.period === DEFAULT_FILTERS.period ? null : filters.period}
+          choices={[
+            ...PERIODS.filter((period) => period !== DEFAULT_FILTERS.period).map((period) => ({ value: period, label: PERIOD_LABELS[period] })),
+            { value: CUSTOM, label: "Période personnalisée…" },
+          ]}
+          allLabel={PERIOD_LABELS[DEFAULT_FILTERS.period]}
+          onChange={(value) => {
+            if (value === CUSTOM) return setShowRange(true)
+            setShowRange(false)
+            apply({ period: (value as HistoryFilters["period"]) ?? DEFAULT_FILTERS.period, range: null })
+          }} />
         <FilterSelect label="Opérateur" value={filters.operator} allLabel="Tous opérateurs"
           choices={options.operators.map((operator) => ({ value: operator.id, label: operator.name }))} onChange={(operator) => apply({ operator })} />
         <FilterSelect label="Type" value={filters.type} allLabel="Tous types"
@@ -113,7 +157,7 @@ export function FilterBar({ filters, options }: { filters: HistoryFilters; optio
             choices={options.agents.map((agent) => ({ value: agent.id, label: agent.name }))} onChange={(agent) => apply({ agent })} />
         )}
         {hasFilters && (
-          <button type="button" onClick={() => { setText(""); startTransition(() => router.replace(pathname, { scroll: false })) }}
+          <button type="button" onClick={() => { setText(""); setShowRange(false); startTransition(() => router.replace(pathname, { scroll: false })) }}
             className="h-11 shrink-0 rounded-full px-4 text-sm font-semibold text-primary underline-offset-4 hover:underline">
             Tout effacer
           </button>

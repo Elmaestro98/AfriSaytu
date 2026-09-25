@@ -4,7 +4,7 @@ import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { recordAudit, singleBranch } from "@/server/audit/log"
 import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
-import { toCsv, toExportRecord } from "@/server/export/operations-file"
+import { exportFileName, toCsv, toExportRecord } from "@/server/export/operations-file"
 import { toXlsx } from "@/server/export/operations-xlsx"
 import { buildHistoryWhere } from "@/server/operations/history-where"
 import { getCurrentPlan, getHistoryRetention, getSubscriptionState } from "@/server/plans/current"
@@ -86,7 +86,8 @@ export async function exportOperations(
     after: { format, count: records.length, filters: { ...filters, limit: undefined } },
   })
 
-  const filename = `afrisaytu-operations-${dayKey(now)}.${format}`
+  const operator = filters.operator ? await ctx.db.operatorCatalog.findUnique({ where: { id: filters.operator }, select: { name: true } }) : null
+  const filename = exportFileName({ operatorCode: operator?.name ?? null, range: filters.range, period: filters.period, today: dayKey(now) }, format)
   if (format === "xlsx") {
     return {
       ok: true,

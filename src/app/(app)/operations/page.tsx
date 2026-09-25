@@ -3,7 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
-import { dayKey, formatDayLabel, formatLongDate } from "@/lib/dates"
+import { dayKey, formatDayKey, formatDayLabel, formatLongDate } from "@/lib/dates"
 import { PAGE_SIZE, PERIOD_LABELS, historyQueryString, parseHistoryFilters } from "@/lib/history-filters"
 import { PAGE } from "@/lib/layout"
 import { formatFCFA } from "@/lib/money"
@@ -44,12 +44,14 @@ export default async function HistoryPage({ searchParams }: PageProps<"/operatio
   const filters = parseHistoryFilters(await searchParams)
   const [result, options, canExport] = await Promise.all([searchHistory(ctx, filters, now), loadHistoryOptions(ctx), canExportOperations(ctx)])
   const canEnter = authorize(ctx.actor, "transaction:create").allowed
+  const mayExport = authorize(ctx.actor, "data:export").allowed // the right; canExport adds the plan
+  const periodLabel = filters.range ? `Du ${formatDayKey(filters.range.from)} au ${formatDayKey(filters.range.to)}` : PERIOD_LABELS[filters.period]
   const showAuthor = ctx.actor.role !== "AGENT"
   const { summary } = result
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader title="Historique" subtitle={ctx.actor.role === "AGENT" ? "Vos opérations" : PERIOD_LABELS[filters.period]} />
+      <AppHeader title="Historique" subtitle={ctx.actor.role === "AGENT" ? "Vos opérations" : periodLabel} />
       <main className={cn(PAGE, "gap-5")}>
         <section className="flex flex-col gap-3 rounded-2xl border bg-card p-4 lg:flex-row lg:items-end lg:justify-between lg:p-5">
           <div>
@@ -67,7 +69,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/operatio
         <FilterBar key={historyQueryString(filters)} filters={filters} options={options} />
 
         {/* F-61: a plan limit invites to upgrade instead of hiding data silently. */}
-        {result.retention && filters.period === "all" && (
+        {result.retention && (filters.range ? filters.range.from < dayKey(result.retention.since) : filters.period === "all") && (
           <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
             Votre formule {result.retention.planLabel} affiche les {result.retention.months} derniers mois (depuis le {formatLongDate(result.retention.since)}).
             Les opérations plus anciennes sont conservées.{" "}
@@ -80,9 +82,23 @@ export default async function HistoryPage({ searchParams }: PageProps<"/operatio
         )}
 
         {canExport && result.rows.length > 0 && (
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              L&apos;export contient les opérations affichées par les filtres ci-dessus ({periodLabel.toLowerCase()}).
+            </p>
             <ExportLinks filters={filters} />
           </div>
+        )}
+        {/* F-61: the plan's limit is explained, not hidden. */}
+        {!canExport && mayExport && result.rows.length > 0 && (
+          <p className="rounded-xl bg-accent px-4 py-3 text-sm text-accent-foreground">
+            L&apos;export Excel et CSV est disponible à partir de la formule Pro.{" "}
+            {ctx.actor.role === "OWNER" ? (
+              <Link href="/settings/subscription" className="font-semibold underline underline-offset-4">Voir les formules</Link>
+            ) : (
+              "Le propriétaire peut changer de formule."
+            )}
+          </p>
         )}
 
         {ctx.actor.role === "AGENT" && (
