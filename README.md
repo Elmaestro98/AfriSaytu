@@ -153,7 +153,7 @@ Deux principes structurants pour les contributeurs :
 | Pro | 5 000 FCFA/mois | Jusqu'à 5 utilisateurs, exports, rapports |
 | Business | 10 000 FCFA/mois | Multi-points de vente, permissions avancées |
 
-Essai gratuit de 14 jours. Paiement par Wave et Orange Money.
+Essai gratuit de 7 jours. Paiement par Wave et Orange Money.
 
 ---
 
