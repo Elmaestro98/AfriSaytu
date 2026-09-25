@@ -11,6 +11,8 @@ export type DailyCommissionRow = DailyCommission & {
   color: string | null
   logoSrc: string | null
   hasScale: boolean // false: the SaaS admin has not set this operator's tiers yet
+  tierNumber: number | null // 1 for the lowest tier reached; null when none is reached
+  tierCount: number
 }
 
 export type DailyCommissions = { rows: DailyCommissionRow[]; total: number }
@@ -67,9 +69,13 @@ export async function loadDailyCommissions(ctx: ActorContext, now = new Date()):
   const rows = accounts.flatMap((account) => {
     const operator = account.operator
     if (!operator) return []
-    const scale = scaleOf(operator.id)
+    const scale = scaleOf(operator.id).sort((a, b) => a.minAmount - b.minAmount)
+    const result = dailyCommission(scale, volumeOf.get(`${account.branchId}:${operator.id}`) ?? 0)
+    const reached = result.tier ? scale.findIndex((tier) => tier.minAmount === result.tier?.minAmount) : -1
     return [{
-      ...dailyCommission(scale, volumeOf.get(`${account.branchId}:${operator.id}`) ?? 0),
+      ...result,
+      tierNumber: reached >= 0 ? reached + 1 : null,
+      tierCount: scale.length,
       branchId: account.branchId,
       branchName: account.branch.name,
       operatorId: operator.id,

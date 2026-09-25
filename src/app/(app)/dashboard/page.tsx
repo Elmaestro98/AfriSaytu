@@ -105,11 +105,21 @@ export default async function DashboardPage() {
         <section aria-label={ctx.actor.role === "AGENT" ? "Votre journée" : "Aujourd'hui"} className="grid gap-3 sm:grid-cols-2 lg:gap-4 xl:grid-cols-4">
           <KpiCard label="Volume du jour" value={formatFCFA(today.volume)} icon={TrendingUp} tone="primary"
             change={{ value: today.volumeChange, label: "vs hier" }} />
-          {/* Per-operation commissions + the day's commissions of daily-volume operators. Yesterday is
-              only compared when there is no daily-volume commission (a day in progress vs a full day). */}
-          {/* An agent's card keeps their own operations; the branch's daily commissions are below. */}
-          <KpiCard label="Commissions" value={`+${formatFCFA(today.commission + (isAgent ? 0 : daily.total))}`} icon={Coins}
-            change={{ value: daily.rows.length > 0 && !isAgent ? null : today.commissionChange, label: "vs hier" }} />
+          {/* Per-operation commissions + the day's commissions of daily-volume operators. With the
+              latter, the split replaces the comparison with yesterday (a day in progress vs a full day).
+              An agent's card keeps their own operations; the branch's daily commissions are added below. */}
+          {daily.rows.length > 0 ? (
+            <KpiCard label="Commissions" value={`+${formatFCFA(today.commission + (isAgent ? 0 : daily.total))}`} icon={Coins}>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {isAgent
+                  ? `+ ${formatFCFA(daily.total)} du jour pour le point de vente`
+                  : `dont ${formatFCFA(daily.total)} du jour · ${formatFCFA(today.commission)} par opération`}
+              </span>
+            </KpiCard>
+          ) : (
+            <KpiCard label="Commissions" value={`+${formatFCFA(today.commission)}`} icon={Coins}
+              change={{ value: today.commissionChange, label: "vs hier" }} />
+          )}
           <KpiCard label="Opérations" value={String(today.count)} icon={Activity}>
             <span className="text-xs text-muted-foreground">
               {today.deposits} dépôt{today.deposits > 1 ? "s" : ""} · {today.withdrawals} retrait{today.withdrawals > 1 ? "s" : ""}
