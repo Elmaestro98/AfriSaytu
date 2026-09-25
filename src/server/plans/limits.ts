@@ -18,6 +18,27 @@ export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   BUSINESS: "Business",
 }
 
+// Monthly prices of the cahier des charges, section 13. Indicative: the final prices are set after
+// the pilot. A yearly payment gets 2 months free.
+export const PLAN_MONTHLY_PRICE: Record<SubscriptionPlan, number> = {
+  BASIC: 2_500,
+  PRO: 5_000,
+  BUSINESS: 10_000,
+}
+
+export const FREE_MONTHS_PER_YEAR = 2
+
+export function yearlyPrice(plan: SubscriptionPlan): number {
+  return PLAN_MONTHLY_PRICE[plan] * (12 - FREE_MONTHS_PER_YEAR)
+}
+
+// What each plan includes, as shown on the subscription screen (section 13).
+export const PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> = {
+  BASIC: ["Saisie, commissions, historique", "Caisse et clôture", "Tous les opérateurs", "Historique sur 3 mois"],
+  PRO: ["Tout le plan Basic", "Export CSV et Excel", "Rapports PDF et rapprochement des commissions", "Historique sur 24 mois"],
+  BUSINESS: ["Tout le plan Pro", "Plusieurs points de vente", "Permissions avancées", "Historique illimité"],
+}
+
 function underLimit(limit: number | null, current: number): boolean {
   return limit === null || current < limit
 }

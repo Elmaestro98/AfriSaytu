@@ -1,4 +1,4 @@
-import { Percent, ScrollText, Smartphone, Store, Users } from "lucide-react"
+import { CreditCard, Percent, ScrollText, Smartphone, Store, Users } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
@@ -22,7 +22,8 @@ export default async function SettingsPage() {
   const rules = can("commissionRule:manage")
   const team = can("member:manage")
   const audit = can("audit:view")
-  if (!catalog && !rules && !team && !audit) redirect("/dashboard")
+  const subscription = can("subscription:manage")
+  if (!catalog && !rules && !team && !audit && !subscription) redirect("/dashboard")
 
   return (
     <div className="flex flex-1 flex-col">
@@ -32,6 +33,7 @@ export default async function SettingsPage() {
         {catalog && <SettingsLink href="/settings/operators" icon={Smartphone} title="Opérateurs" description="Wave, Orange Money, Mixx by Yas" />}
         {rules && <SettingsLink href="/settings/commissions" icon={Percent} title="Commissions" description="Vos barèmes par opérateur et par tranche" />}
         {team && <SettingsLink href="/settings/team" icon={Users} title="Équipe" description="Invitez vos agents et gérez leurs accès" />}
+        {subscription && <SettingsLink href="/settings/subscription" icon={CreditCard} title="Mon abonnement" description="Formule, échéance et utilisation" />}
         {audit && <SettingsLink href="/settings/audit" icon={ScrollText} title="Journal d'audit" description="Annulations, clôtures, règles, exports" />}
       </main>
     </div>

@@ -26,3 +26,32 @@ export function subscriptionBanner(state: SubscriptionState, isOwner: boolean): 
       return null // ACTIVE; SUSPENDED gets its own full screen
   }
 }
+
+export const STATUS_LABELS: Record<SubscriptionState["status"], string> = {
+  TRIAL: "Essai gratuit",
+  ACTIVE: "Actif",
+  PAST_DUE: "Paiement en retard",
+  READ_ONLY: "Lecture seule",
+  SUSPENDED: "Suspendu",
+}
+
+// The line under the status on the subscription screen, or null when there is no date to give.
+export function deadlineLine(state: SubscriptionState, formatDate: (date: Date) => string): string | null {
+  if (!state.deadline) return null
+  const date = formatDate(state.deadline)
+  switch (state.status) {
+    case "TRIAL":
+      return `Fin de l'essai le ${date}`
+    case "ACTIVE":
+      return `Prochaine échéance le ${date}`
+    case "PAST_DUE":
+      return `Passage en lecture seule le ${date}`
+    default:
+      return null
+  }
+}
+
+// After a trial nothing was ever billed: "late payment" would be wrong.
+export function statusLabel(state: SubscriptionState): string {
+  return state.status === "PAST_DUE" && state.fromTrial ? "Essai terminé" : STATUS_LABELS[state.status]
+}
