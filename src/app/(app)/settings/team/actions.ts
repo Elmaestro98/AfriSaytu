@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache"
 
-import { deactivateMemberSchema, inviteMemberSchema } from "@/schemas/team"
+import { changeRoleSchema, deactivateMemberSchema, inviteMemberSchema } from "@/schemas/team"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
+import { changeMemberRole } from "@/server/team/change-role"
 import { deactivateMember } from "@/server/team/deactivate"
 import type { ActionResult } from "@/server/result"
 import { inviteMember } from "@/server/team/invite"
@@ -35,4 +36,10 @@ export async function deactivateMemberAction(raw: unknown): Promise<ActionResult
   const parsed = deactivateMemberSchema.safeParse(raw)
   if (!parsed.success) return { ok: false, error: "Membre invalide." }
   return guard(async () => deactivateMember(await requireActor(), parsed.data))
+}
+
+export async function changeRoleAction(raw: unknown): Promise<ActionResult> {
+  const parsed = changeRoleSchema.safeParse(raw)
+  if (!parsed.success) return { ok: false, error: "Rôle invalide." }
+  return guard(async () => changeMemberRole(await requireActor(), parsed.data))
 }

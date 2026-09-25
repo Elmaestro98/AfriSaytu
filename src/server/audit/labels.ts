@@ -51,6 +51,12 @@ function detailOf(action: AuditActionKey, before: Json, after: Json): string | n
       const label = role && Object.hasOwn(ROLE_LABELS, role) ? roleLabel(role as RoleKey) : null
       return [email, label].filter(Boolean).join(" · ") || null
     }
+    case "member.changeRole": {
+      const from = text(before.role)
+      const to = text(after.role)
+      if (!from || !to || !Object.hasOwn(ROLE_LABELS, from) || !Object.hasOwn(ROLE_LABELS, to)) return null
+      return `${roleLabel(from as RoleKey)} → ${roleLabel(to as RoleKey)}`
+    }
     case "branch.create":
       return text(after.name)
     case "account.create": {

@@ -13,5 +13,11 @@ export const deactivateMemberSchema = z.object({
   memberId: z.string().min(1),
 })
 
+export const changeRoleSchema = z.object({
+  memberId: z.string().min(1),
+  role: z.enum(INVITABLE_ROLES, "Choisissez un rôle"),
+})
+
+export type ChangeRoleInput = z.infer<typeof changeRoleSchema>
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>
 export type DeactivateMemberInput = z.infer<typeof deactivateMemberSchema>

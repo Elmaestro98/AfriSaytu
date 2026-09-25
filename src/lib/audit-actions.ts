@@ -9,6 +9,7 @@ export const AUDIT_ACTIONS = {
   "data.export": "Export de données",
   "member.invite": "Invitation d'un membre",
   "member.deactivate": "Désactivation d'un membre",
+  "member.changeRole": "Changement de rôle",
   "branch.create": "Création de point de vente",
   "account.create": "Ajout de compte",
   "account.update": "Modification de compte",

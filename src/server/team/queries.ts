@@ -1,6 +1,6 @@
 import type { Role } from "@/generated/prisma/enums"
 import type { ActorContext } from "@/server/auth/actor"
-import { planDeactivation } from "@/server/team/rules"
+import { planDeactivation, roleChoices } from "@/server/team/rules"
 
 export type TeamMemberRow = {
   id: string
@@ -10,6 +10,7 @@ export type TeamMemberRow = {
   isSelf: boolean
   branchNames: string[]
   canDeactivate: boolean
+  roleChoices: Role[] // roles this member can be switched to by the current user
 }
 
 export type BranchOption = { id: string; name: string }
@@ -35,20 +36,19 @@ export async function listTeam(ctx: ActorContext): Promise<TeamMemberRow[]> {
         member.id === ctx.actor.memberId ||
         member.branches.some((link) => ctx.actor.branchIds.includes(link.branchId)),
     )
-    .map((member) => ({
-      id: member.id,
-      name: member.name,
-      role: member.role,
-      isActive: member.isActive,
-      isSelf: member.id === ctx.actor.memberId,
-      branchNames: member.branches.map((link) => link.branch.name),
-      canDeactivate: planDeactivation(ctx.actor, {
-        memberId: member.id,
+    .map((member) => {
+      const target = { memberId: member.id, role: member.role, branchIds: member.branches.map((link) => link.branchId), isActive: member.isActive }
+      return {
+        id: member.id,
+        name: member.name,
         role: member.role,
-        branchIds: member.branches.map((link) => link.branchId),
         isActive: member.isActive,
-      }).ok,
-    }))
+        isSelf: member.id === ctx.actor.memberId,
+        branchNames: member.branches.map((link) => link.branch.name),
+        canDeactivate: planDeactivation(ctx.actor, target).ok,
+        roleChoices: roleChoices(ctx.actor, target),
+      }
+    })
 }
 
 // Branches the current user can put a new member on.

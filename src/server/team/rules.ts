@@ -48,6 +48,32 @@ export function planDeactivation(actor: Actor, target: TeamTarget): Plan {
   return { ok: true }
 }
 
+// Changing a role (F-64 journals it). Same reach as a deactivation, and the new role must be one
+// the actor may give: in practice only the owner switches someone between manager and agent.
+export function planRoleChange(actor: Actor, target: TeamTarget, role: Role): Plan {
+  if (target.memberId === actor.memberId) {
+    return { ok: false, error: "Vous ne pouvez pas changer votre propre rôle." }
+  }
+  if (!target.isActive) {
+    return { ok: false, error: "Ce membre est désactivé." }
+  }
+  if (target.role === role) {
+    return { ok: false, error: "Ce membre a déjà ce rôle." }
+  }
+  if (!canManageMember(actor.role, target.role) || !canAssignRole(actor.role, role)) {
+    return { ok: false, error: "Vous ne pouvez pas donner ce rôle à ce membre." }
+  }
+  if (actor.role === "MANAGER" && !target.branchIds.some((branchId) => actor.branchIds.includes(branchId))) {
+    return { ok: false, error: "Ce membre ne travaille dans aucun de vos points de vente." }
+  }
+  return { ok: true }
+}
+
+// Roles the actor may switch this member to, for the team screen.
+export function roleChoices(actor: Actor, target: TeamTarget): Role[] {
+  return INVITABLE_ROLES.filter((role) => planRoleChange(actor, target, role).ok)
+}
+
 export type InvitationMetadata = { role: "MANAGER" | "AGENT"; branchIds: string[] }
 
 // Reads the role and branches the server stored on a Clerk invitation. Anything unexpected

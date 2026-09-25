@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import type { Actor } from "@/server/auth/permissions"
-import { parseInvitationMetadata, planDeactivation, planInvitation, type TeamTarget } from "@/server/team/rules"
+import { parseInvitationMetadata, planDeactivation, planInvitation, planRoleChange, roleChoices, type TeamTarget } from "@/server/team/rules"
 
 const owner: Actor = { memberId: "m_owner", role: "OWNER", branchIds: ["b1", "b2"] }
 const manager: Actor = { memberId: "m_manager", role: "MANAGER", branchIds: ["b1"] }
@@ -96,5 +96,34 @@ describe("parseInvitationMetadata", () => {
     expect(parseInvitationMetadata({ appRole: "AGENT", branchIds: [] })).toBeNull()
     expect(parseInvitationMetadata({ appRole: "AGENT", branchIds: [1, 2] })).toBeNull()
     expect(parseInvitationMetadata({ appRole: "ADMIN", branchIds: ["b1"] })).toBeNull()
+  })
+})
+
+describe("planRoleChange", () => {
+  it("lets the owner switch a member between agent and manager", () => {
+    expect(planRoleChange(owner, agentTarget, "MANAGER").ok).toBe(true)
+    expect(planRoleChange(owner, { ...agentTarget, role: "MANAGER" }, "AGENT").ok).toBe(true)
+  })
+
+  it("never gives nor takes the owner role", () => {
+    expect(planRoleChange(owner, agentTarget, "OWNER").ok).toBe(false)
+    expect(planRoleChange(owner, { ...agentTarget, role: "OWNER" }, "AGENT").ok).toBe(false)
+  })
+
+  it("refuses a manager promoting an agent or demoting another manager", () => {
+    expect(planRoleChange(manager, agentTarget, "MANAGER").ok).toBe(false)
+    expect(planRoleChange(manager, { ...agentTarget, role: "MANAGER" }, "AGENT").ok).toBe(false)
+  })
+
+  it("refuses an agent, a change of one's own role, a disabled member and a no-op", () => {
+    expect(planRoleChange(agent, agentTarget, "MANAGER").ok).toBe(false)
+    expect(planRoleChange(owner, { ...agentTarget, memberId: "m_owner" }, "MANAGER").ok).toBe(false)
+    expect(planRoleChange(owner, { ...agentTarget, isActive: false }, "MANAGER").ok).toBe(false)
+    expect(planRoleChange(owner, agentTarget, "AGENT").ok).toBe(false)
+  })
+
+  it("offers the owner the other role only, and a manager nothing", () => {
+    expect(roleChoices(owner, agentTarget)).toEqual(["MANAGER"])
+    expect(roleChoices(manager, agentTarget)).toEqual([])
   })
 })

@@ -7,7 +7,7 @@ import { roleLabel } from "@/lib/roles"
 import { cn } from "@/lib/utils"
 import type { TeamMemberRow } from "@/server/team/queries"
 
-import { deactivateMemberAction } from "./actions"
+import { changeRoleAction, deactivateMemberAction } from "./actions"
 
 const ROLE_AVATAR: Record<TeamMemberRow["role"], string> = {
   OWNER: "bg-primary text-primary-foreground",
@@ -25,17 +25,21 @@ function initials(name: string): string {
     .toUpperCase()
 }
 
+// What is being confirmed on a member: their deactivation, or a switch to another role.
+type Pending = { memberId: string; change: "deactivate" | TeamMemberRow["roleChoices"][number] }
+
 export function MemberList({ members }: { members: readonly TeamMemberRow[] }) {
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState<Pending | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  const deactivate = (memberId: string) => {
+  const confirm = ({ memberId, change }: Pending) => {
     setError(null)
     startTransition(async () => {
-      const result = await deactivateMemberAction({ memberId })
+      const result =
+        change === "deactivate" ? await deactivateMemberAction({ memberId }) : await changeRoleAction({ memberId, role: change })
       if (!result.ok) setError(result.error)
-      setConfirmingId(null)
+      setConfirming(null)
     })
   }
 
@@ -85,38 +89,39 @@ export function MemberList({ members }: { members: readonly TeamMemberRow[] }) {
               </span>
             </div>
 
-            {member.canDeactivate &&
-              (confirmingId === member.id ? (
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    className="h-11 flex-1"
-                    disabled={isPending}
-                    onClick={() => deactivate(member.id)}
-                  >
-                    {isPending ? "Désactivation…" : "Confirmer"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11 flex-1"
-                    disabled={isPending}
-                    onClick={() => setConfirmingId(null)}
-                  >
-                    Annuler
-                  </Button>
-                </div>
-              ) : (
+            {confirming?.memberId === member.id ? (
+              <div className="flex gap-3">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="h-11"
-                  onClick={() => setConfirmingId(member.id)}
+                  variant={confirming.change === "deactivate" ? "destructive" : "default"}
+                  className="h-11 flex-1"
+                  disabled={isPending}
+                  onClick={() => confirm(confirming)}
                 >
-                  Désactiver
+                  {isPending ? "Enregistrement…" : "Confirmer"}
                 </Button>
-              ))}
+                <Button type="button" variant="outline" className="h-11 flex-1" disabled={isPending} onClick={() => setConfirming(null)}>
+                  Annuler
+                </Button>
+              </div>
+            ) : (
+              (member.roleChoices.length > 0 || member.canDeactivate) && (
+                <div className="flex flex-wrap gap-3">
+                  {member.roleChoices.map((role) => (
+                    <Button key={role} type="button" variant="outline" className="h-11 flex-1"
+                      onClick={() => setConfirming({ memberId: member.id, change: role })}>
+                      {role === "MANAGER" ? "Nommer gérant" : "Repasser agent"}
+                    </Button>
+                  ))}
+                  {member.canDeactivate && (
+                    <Button type="button" variant="outline" className="h-11 flex-1"
+                      onClick={() => setConfirming({ memberId: member.id, change: "deactivate" })}>
+                      Désactiver
+                    </Button>
+                  )}
+                </div>
+              )
+            )}
           </li>
         ))}
       </ul>
