@@ -6,6 +6,7 @@ import { recordAudit } from "@/server/audit/log"
 import { findOverlap } from "@/server/commissions/resolve"
 import type { TenantClient } from "@/server/db/tenant"
 import type { ActionResult } from "@/server/result"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 // A rule is never edited in place: "modify" closes the current version (validTo = now) and
 // creates a new one (validFrom = now). Past operations keep the commission frozen on them.
@@ -46,6 +47,9 @@ function ruleData(ctx: ActorContext, rule: RuleFieldsInput, now: Date) {
 }
 
 export async function createRule(ctx: ActorContext, rule: RuleFieldsInput, now = new Date()): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   if (!authorize(ctx.actor, "commissionRule:manage").allowed) return DENIED
   if (!(await operatorEnabled(ctx.db, rule.operatorId))) {
     return { ok: false, error: "Cet opérateur n'est pas activé pour votre entreprise." }
@@ -60,6 +64,9 @@ export async function createRule(ctx: ActorContext, rule: RuleFieldsInput, now =
 }
 
 export async function replaceRule(ctx: ActorContext, input: ReplaceRuleInput, now = new Date()): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   if (!authorize(ctx.actor, "commissionRule:manage").allowed) return DENIED
 
   const current = await ctx.db.commissionRule.findFirst({ where: { id: input.ruleId, ...inForceWhere(now) } })
@@ -88,6 +95,9 @@ export async function replaceRule(ctx: ActorContext, input: ReplaceRuleInput, no
 
 // Stops a rule from now on. The rule stays in the database for the history.
 export async function closeRule(ctx: ActorContext, input: CloseRuleInput, now = new Date()): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   if (!authorize(ctx.actor, "commissionRule:manage").allowed) return DENIED
 
   const current = await ctx.db.commissionRule.findFirst({ where: { id: input.ruleId, ...inForceWhere(now) }, select: { id: true } })

@@ -4,6 +4,7 @@ import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { recordAudit } from "@/server/audit/log"
 import type { ActionResult } from "@/server/result"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 export type OrgOperatorRow = {
   operatorId: string
@@ -57,6 +58,9 @@ export async function setOperatorActive(
   ctx: ActorContext,
   input: SetOperatorActiveInput,
 ): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   if (!canToggleOperators(ctx)) {
     return { ok: false, error: "Seul le propriétaire peut activer ou désactiver un opérateur." }
   }
@@ -94,6 +98,9 @@ export async function setOperatorActive(
 // Adjustable per operator (cahier 6.1 "- frais opérateur éventuels"): is the SEND fee also
 // taken from the agent's UV? Applies to future operations only.
 export async function setSendFeeFromUv(ctx: ActorContext, input: SetSendFeeInput): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   if (!canToggleOperators(ctx)) {
     return { ok: false, error: "Seul le propriétaire peut modifier ce réglage." }
   }

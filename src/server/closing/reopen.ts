@@ -6,6 +6,7 @@ import { recordAudit } from "@/server/audit/log"
 import { lastClosedClosing } from "@/server/closing/queries"
 import { reversalPostings } from "@/server/ledger/postings"
 import type { ActionResult } from "@/server/result"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 class AlreadyReopened extends Error {}
 
@@ -13,6 +14,9 @@ class AlreadyReopened extends Error {}
 // closing becomes REOPENED (kept for history), its adjustment lines get counter-entries, and its
 // operations are detached (they can be cancelled again). The day is then closed again.
 export async function reopenClosing(ctx: ActorContext, input: ReopenClosingInput): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   const closing = await ctx.db.dailyClosing.findFirst({
     where: { id: input.closingId },
     select: { id: true, branchId: true, status: true },

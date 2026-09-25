@@ -7,6 +7,7 @@ import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { getBalances } from "@/server/ledger/balances"
 import { PostingError, movementPostings, type MovementAccount } from "@/server/ledger/postings"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 export type CreateMovementResult =
   | { ok: true; message: string; warning: string | null }
@@ -16,6 +17,9 @@ const ACCOUNT_ERROR = "Les comptes choisis ne conviennent pas à ce mouvement."
 
 // Records an internal movement (no customer) and its ledger lines in ONE SQL transaction.
 export async function createMovement(ctx: ActorContext, input: CreateMovementInput): Promise<CreateMovementResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   const replay = await ctx.db.internalMovement.findFirst({ where: { idempotencyKey: input.idempotencyKey }, select: { id: true } })
   if (replay) return { ok: true, message: "Mouvement déjà enregistré.", warning: null }
 

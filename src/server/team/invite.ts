@@ -3,7 +3,7 @@ import { clerkClient } from "@clerk/nextjs/server"
 import type { InviteMemberInput } from "@/schemas/team"
 import type { ActorContext } from "@/server/auth/actor"
 import { recordAudit, singleBranch } from "@/server/audit/log"
-import { getCurrentPlan } from "@/server/plans/current"
+import { getCurrentPlan, refuseWriteIfInactive } from "@/server/plans/current"
 import { PLAN_LABELS, canAddMember } from "@/server/plans/limits"
 import type { ActionResult } from "@/server/result"
 import { planInvitation } from "@/server/team/rules"
@@ -11,6 +11,9 @@ import { planInvitation } from "@/server/team/rules"
 // Sends an e-mail invitation. The role and branches are stored on the Clerk invitation by the
 // server, and read back at the person's first sign-in (see claim.ts).
 export async function inviteMember(ctx: ActorContext, input: InviteMemberInput): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   const branchIds = [...new Set(input.branchIds)]
 
   const plan = planInvitation(ctx.actor, input.role, branchIds)

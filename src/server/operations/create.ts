@@ -7,6 +7,7 @@ import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { computeEntry } from "@/server/operations/compute-entry"
 import { loadEntryContext } from "@/server/operations/entry-context"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 export const DUPLICATE_WINDOW_MS = 3 * 60_000
 
@@ -22,6 +23,9 @@ function isUniqueViolation(error: unknown, field: string): boolean {
 // Records a customer operation: the operation and its ledger lines in ONE SQL transaction.
 // Everything is recomputed here; nothing computed by the browser is trusted.
 export async function createOperation(ctx: ActorContext, input: CreateOperationInput): Promise<CreateOperationResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   // A network retry of an operation already recorded: answer success without writing twice.
   const replay = await ctx.db.transaction.findFirst({
     where: { idempotencyKey: input.idempotencyKey },

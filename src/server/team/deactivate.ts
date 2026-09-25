@@ -7,6 +7,7 @@ import type { ActionResult } from "@/server/result"
 import { planDeactivation } from "@/server/team/rules"
 
 // Deactivates a member without deleting anything: their operations stay in the history.
+// Allowed even in read only: cutting the access of someone who left must never wait for a payment.
 export async function deactivateMember(
   ctx: ActorContext,
   input: DeactivateMemberInput,

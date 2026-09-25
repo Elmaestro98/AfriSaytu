@@ -5,6 +5,7 @@ import { recordAudit } from "@/server/audit/log"
 import { reversalPostings } from "@/server/ledger/postings"
 import { planCancellation } from "@/server/operations/cancel-rules"
 import type { ActionResult } from "@/server/result"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 class AlreadyCancelledError extends Error {}
 
@@ -12,6 +13,9 @@ class AlreadyCancelledError extends Error {}
 // with the reason, and each of its ledger lines gets an opposite line (counter-entry), all in
 // ONE SQL transaction. Both stay visible in the history.
 export async function cancelOperation(ctx: ActorContext, input: CancelOperationInput, now = new Date()): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   const operation = await ctx.db.transaction.findFirst({
     where: { id: input.transactionId },
     select: { id: true, status: true, branchId: true, memberId: true, createdAt: true, closingId: true, amount: true, type: true },

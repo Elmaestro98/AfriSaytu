@@ -7,13 +7,16 @@ import { recordAudit } from "@/server/audit/log"
 import { UnknownOperatorError, buildBranchAccounts } from "@/server/branches/accounts"
 import { countActiveBranches } from "@/server/branches/queries"
 import { listActiveOrgOperators } from "@/server/operators/manage"
-import { getCurrentPlan } from "@/server/plans/current"
+import { getCurrentPlan, refuseWriteIfInactive } from "@/server/plans/current"
 import { PLAN_LABELS, canAddBranch } from "@/server/plans/limits"
 import type { ActionResult } from "@/server/result"
 
 const UNAVAILABLE_OPERATOR = "Un des opérateurs choisis n'est pas activé pour votre entreprise."
 
 export async function createBranch(ctx: ActorContext, input: CreateBranchInput): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   if (!authorize(ctx.actor, "branch:create").allowed) {
     return { ok: false, error: "Seul le propriétaire peut créer un point de vente." }
   }
@@ -68,6 +71,9 @@ export async function addOperatorAccount(
   ctx: ActorContext,
   input: AddOperatorAccountInput,
 ): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   // The branch id comes from the client: it must belong to this organization.
   const branch = await ctx.db.branch.findFirst({ where: { id: input.branchId, isActive: true }, select: { id: true } })
   if (!branch) return { ok: false, error: "Point de vente introuvable." }
@@ -114,6 +120,9 @@ export async function addOperatorAccount(
 // Only the account number and the alert threshold change here. A balance is never edited:
 // it moves through ledger lines only.
 export async function updateAccount(ctx: ActorContext, input: UpdateAccountInput): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   const account = await ctx.db.account.findFirst({
     where: { id: input.accountId },
     select: { id: true, branchId: true, accountNumber: true, alertThreshold: true },

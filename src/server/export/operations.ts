@@ -6,7 +6,8 @@ import { recordAudit, singleBranch } from "@/server/audit/log"
 import { toCsv, toExportRecord } from "@/server/export/operations-file"
 import { toXlsx } from "@/server/export/operations-xlsx"
 import { buildHistoryWhere } from "@/server/operations/history-where"
-import { getCurrentPlan } from "@/server/plans/current"
+import { getCurrentPlan, getSubscriptionState } from "@/server/plans/current"
+import { SUSPENDED_ERROR } from "@/server/plans/lifecycle"
 
 export const MAX_EXPORT_ROWS = 50_000
 
@@ -31,6 +32,8 @@ export async function exportOperations(
   format: ExportFormat,
   now = new Date(),
 ): Promise<ExportResult> {
+  // Read only still exports (F-62: the history stays exportable); a suspended account does not.
+  if ((await getSubscriptionState(ctx, now)).access === "BLOCKED") return { ok: false, status: 403, error: SUSPENDED_ERROR }
   if (!(await canExportOperations(ctx))) {
     return { ok: false, status: 403, error: "L'export est disponible à partir de la formule Pro." }
   }

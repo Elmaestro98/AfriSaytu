@@ -8,6 +8,7 @@ import { recordAudit } from "@/server/audit/log"
 import { planClosing } from "@/server/closing/compute"
 import { loadPeriodAccounts } from "@/server/closing/queries"
 import type { ActionResult } from "@/server/result"
+import { refuseWriteIfInactive } from "@/server/plans/current"
 
 class ClosingRejected extends Error {}
 
@@ -16,6 +17,9 @@ class ClosingRejected extends Error {}
 // becomes the next opening balance), and every operation of the period attached to the closing
 // (an attached operation can no longer be cancelled).
 export async function validateClosing(ctx: ActorContext, input: ValidateClosingInput, now = new Date()): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+
   const branch = await ctx.db.branch.findFirst({ where: { id: input.branchId, isActive: true }, select: { id: true } })
   if (!branch) return { ok: false, error: "Point de vente introuvable." }
   if (!authorize(ctx.actor, "closing:validate", { branchId: branch.id }).allowed) {
