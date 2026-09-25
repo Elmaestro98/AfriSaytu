@@ -2,10 +2,12 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
+import { SummaryStat } from "@/components/business/summary-stat"
 import { AUDIT_ACTIONS } from "@/lib/audit-actions"
 import { auditQueryString, parseAuditFilters } from "@/lib/audit-filters"
 import { PAGE_SIZE, PERIOD_LABELS, PERIODS } from "@/lib/history-filters"
-import { PAGE_NARROW } from "@/lib/layout"
+import { PAGE } from "@/lib/layout"
+import { formatAmount } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { AuditAccessError, listAudit } from "@/server/audit/queries"
 import { requireActor } from "@/server/auth/actor"
@@ -39,8 +41,15 @@ export default async function AuditPage({ searchParams }: PageProps<"/settings/a
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader title="Journal d'audit" subtitle="Actions sensibles" backHref="/settings" />
-      <main className={cn(PAGE_NARROW, "gap-6")}>
-        <form method="get" className="grid gap-2 sm:grid-cols-3" aria-label="Filtres du journal">
+      <main className={cn(PAGE, "gap-6")}>
+        <section aria-label="Synthèse" className="grid grid-cols-2 gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-4 lg:p-5">
+          <SummaryStat label="Événements" value={formatAmount(audit.counts.total)} />
+          <SummaryStat label="Annulations" value={formatAmount(audit.counts.cancellations)} tone={audit.counts.cancellations > 0 ? "warning" : undefined} />
+          <SummaryStat label="Réouvertures" value={formatAmount(audit.counts.reopenings)} tone={audit.counts.reopenings > 0 ? "warning" : undefined} />
+          <SummaryStat label="Support AfriSaytu" value={formatAmount(audit.counts.support)} />
+        </section>
+
+        <form method="get" className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end" aria-label="Filtres du journal">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">Période</span>
             <select name="period" defaultValue={filters.period} className={SELECT}>
@@ -61,7 +70,7 @@ export default async function AuditPage({ searchParams }: PageProps<"/settings/a
               {audit.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
             </select>
           </label>
-          <button type="submit" className="h-11 rounded-xl bg-primary font-semibold text-primary-foreground sm:col-span-3">
+          <button type="submit" className="h-11 rounded-xl bg-primary px-6 font-semibold text-primary-foreground">
             Filtrer
           </button>
         </form>

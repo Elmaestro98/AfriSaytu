@@ -27,6 +27,7 @@ export function buildAuditWhere(actor: Actor, filters: AuditFilters, now: Date):
 export type AuditRow = {
   id: string
   createdAt: Date
+  action: string
   title: string
   detail: string | null
   reason: string | null
@@ -34,7 +35,9 @@ export type AuditRow = {
   branchName: string | null
 }
 
-export type AuditPage = { rows: AuditRow[]; hasMore: boolean; members: { id: string; name: string }[] }
+export type AuditCounts = { total: number; cancellations: number; reopenings: number; support: number }
+
+export type AuditPage = { rows: AuditRow[]; hasMore: boolean; members: { id: string; name: string }[]; counts: AuditCounts }
 
 export class AuditAccessError extends Error {}
 
@@ -43,7 +46,7 @@ export async function listAudit(ctx: ActorContext, filters: AuditFilters, now = 
   const where = buildAuditWhere(ctx.actor, filters, now)
   if (!where) throw new AuditAccessError()
 
-  const [entries, authors] = await Promise.all([
+  const [entries, authors, byAction, support] = await Promise.all([
     ctx.db.auditLog.findMany({
       where,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -65,18 +68,29 @@ export async function listAudit(ctx: ActorContext, filters: AuditFilters, now = 
       distinct: ["memberId"],
       select: { member: { select: { id: true, name: true } } },
     }),
+    // Summary of the filtered journal.
+    ctx.db.auditLog.groupBy({ by: ["action"], where, _count: { _all: true } }),
+    ctx.db.auditLog.count({ where: { AND: [where, { memberId: null }] } }), // no member: the SaaS admin
   ])
+  const countOf = (action: string) => byAction.find((row) => row.action === action)?._count._all ?? 0
 
   return {
     hasMore: entries.length > filters.limit,
     rows: entries.slice(0, filters.limit).map((entry) => ({
       id: entry.id,
       createdAt: entry.createdAt,
+      action: entry.action,
       ...describeAudit(entry),
       reason: entry.reason,
       authorName: entry.member?.name ?? "Support AfriSaytu", // no member: the SaaS admin
       branchName: entry.branch?.name ?? null,
     })),
+    counts: {
+      total: byAction.reduce((sum, row) => sum + row._count._all, 0),
+      cancellations: countOf("transaction.cancel"),
+      reopenings: countOf("closing.reopen"),
+      support,
+    },
     members: authors
       .flatMap((row) => (row.member ? [row.member] : []))
       .sort((a, b) => a.name.localeCompare(b.name, "fr")),
