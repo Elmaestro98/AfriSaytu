@@ -13,30 +13,38 @@ import type { Tier } from "@/server/commissions/daily"
 
 import { saveScaleAction } from "./actions"
 
-type Row = { max: number; open: boolean; commission: number }
+type Row = { min: number; max: number; open: boolean; commission: number }
 
 const MODES: { value: CommissionMode; title: string; text: string }[] = [
   { value: "DAILY_VOLUME", title: "Sur le volume du jour", text: "Une commission par point de vente et par jour, selon le total des dépôts et retraits (barème ci-dessous)." },
   { value: "PER_TRANSACTION", title: "Par opération", text: "Chaque opération a sa commission, selon les règles saisies par chaque entreprise." },
 ]
 
-// The admin edits the "jusqu'à" and "commission" columns; every lower bound but the first one
-// follows the previous upper bound + 1, so a scale can have neither gap nor overlap.
+// By default the admin edits the upper bounds and commissions, and every lower bound but the first
+// follows the previous upper bound + 1 (no gap). With "Saisir les paliers inférieurs", each lower
+// bound is typed as printed by the operator (gaps allowed; the server refuses overlaps).
 export function ScaleEditor({ operatorId, mode: initialMode, tiers }: { operatorId: string; mode: CommissionMode; tiers: readonly Tier[] }) {
   const router = useRouter()
   const [mode, setMode] = useState(initialMode)
-  const [first, setFirst] = useState(tiers[0]?.minAmount ?? 1)
   const [rows, setRows] = useState<Row[]>(
     tiers.length > 0
-      ? tiers.map((tier) => ({ max: tier.maxAmount ?? 0, open: tier.maxAmount === null, commission: tier.commission }))
-      : [{ max: 9_999, open: false, commission: 0 }],
+      ? tiers.map((tier) => ({ min: tier.minAmount, max: tier.maxAmount ?? 0, open: tier.maxAmount === null, commission: tier.commission }))
+      : [{ min: 1, max: 9_999, open: false, commission: 0 }],
   )
+  // A saved scale with gaps was typed tier by tier: show it that way.
+  const [manualMins, setManualMins] = useState(tiers.some((tier, index) => index > 0 && tier.minAmount !== (tiers[index - 1].maxAmount ?? 0) + 1))
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  const minOf = (index: number) => (index === 0 ? first : rows[index - 1].max + 1)
+  const minOf = (index: number) => (manualMins || index === 0 ? rows[index].min : rows[index - 1].max + 1)
+  const toggleManual = (manual: boolean) => {
+    // Switching on starts from the bounds shown; switching off goes back to "previous + 1".
+    if (manual) setRows((current) => current.map((row, index) => ({ ...row, min: index === 0 ? row.min : current[index - 1].max + 1 })))
+    setManualMins(manual)
+  }
   const update = (index: number, change: Partial<Row>) => setRows((current) => current.map((row, at) => (at === index ? { ...row, ...change } : row)))
-  const add = () => setRows((current) => [...current.map((row) => ({ ...row, open: false })), { max: 0, open: true, commission: 0 }])
+  const add = () =>
+    setRows((current) => [...current.map((row) => ({ ...row, open: false })), { min: (current.at(-1)?.max ?? 0) + 1, max: 0, open: true, commission: 0 }])
   const remove = (index: number) => setRows((current) => current.filter((_, at) => at !== index))
 
   const save = () => {
@@ -77,8 +85,8 @@ export function ScaleEditor({ operatorId, mode: initialMode, tiers }: { operator
           <ol className="flex flex-col gap-3">
             {rows.map((row, index) => (
               <li key={index} className="grid grid-cols-2 items-center gap-3 rounded-xl bg-muted/50 p-3 sm:grid-cols-[1fr_1fr_1fr_44px] sm:bg-transparent sm:p-0">
-                {index === 0 ? (
-                  <AmountInput aria-label="Palier 1, à partir de" value={first} onValueChange={setFirst} />
+                {index === 0 || manualMins ? (
+                  <AmountInput aria-label={`Palier ${index + 1}, à partir de`} value={row.min} onValueChange={(min) => update(index, { min })} />
                 ) : (
                   <p className="px-3 font-semibold tabular-nums">{formatFCFA(minOf(index))}</p>
                 )}
@@ -95,6 +103,16 @@ export function ScaleEditor({ operatorId, mode: initialMode, tiers }: { operator
               </li>
             ))}
           </ol>
+          <label className="flex items-start gap-2 rounded-xl bg-muted p-3 text-sm">
+            <input type="checkbox" className="mt-0.5 size-4 accent-primary" checked={manualMins} onChange={(event) => toggleManual(event.target.checked)} />
+            <span>
+              <span className="block font-semibold">Saisir moi-même les paliers inférieurs</span>
+              <span className="block text-muted-foreground">
+                Pour recopier le barème tel qu&apos;il est publié (ex. 9 995 puis 10 000). Un total qui tombe entre deux paliers compte
+                pour le palier inférieur. Les paliers ne doivent pas se chevaucher.
+              </span>
+            </span>
+          </label>
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" className="h-11 gap-2 border-dashed" onClick={add}>
               <Plus className="size-4" aria-hidden />

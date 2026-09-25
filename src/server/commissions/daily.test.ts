@@ -38,6 +38,17 @@ describe("dailyCommission", () => {
     expect(dailyCommission(WAVE, 90_000_000)).toMatchObject({ commission: 7_100, next: null })
   })
 
+  it("counts a volume in a gap of the printed scale for the tier below", () => {
+    const printed = [
+      { minAmount: 1, maxAmount: 9_995, commission: 50 },
+      { minAmount: 10_000, maxAmount: 99_995, commission: 500 },
+      { minAmount: 100_000, maxAmount: null, commission: 1_000 },
+    ]
+    expect(dailyCommission(printed, 9_997)).toMatchObject({ commission: 50, tier: printed[0], next: { tier: printed[1], missing: 3 } })
+    expect(dailyCommission(printed, 99_998).commission).toBe(500)
+    expect(dailyCommission(printed, 100_000).commission).toBe(1_000)
+  })
+
   it("earns nothing above a closed scale", () => {
     const closed = WAVE.slice(0, 2)
     expect(dailyCommission(closed, 150_000)).toMatchObject({ commission: 0, tier: null, next: null })
@@ -49,14 +60,14 @@ describe("checkTiers", () => {
     expect(checkTiers([...WAVE].reverse())).toEqual({ ok: true, tiers: WAVE })
   })
 
-  it("refuses a gap between two tiers (9 995 then 10 000, as printed by Wave)", () => {
+  it("accepts a gap between two tiers (9 995 then 10 000, as printed by Wave)", () => {
     const withGap = [{ minAmount: 1, maxAmount: 9_995, commission: 50 }, { minAmount: 10_000, maxAmount: null, commission: 500 }]
-    expect(checkTiers(withGap)).toEqual({ ok: false, error: "Palier 2 : il doit commencer à 9 996 FCFA, juste après le palier précédent." })
+    expect(checkTiers(withGap).ok).toBe(true)
   })
 
   it("refuses overlapping tiers", () => {
     const overlap = [{ minAmount: 1, maxAmount: 10_000, commission: 50 }, { minAmount: 10_000, maxAmount: null, commission: 500 }]
-    expect(checkTiers(overlap).ok).toBe(false)
+    expect(checkTiers(overlap)).toEqual({ ok: false, error: "Palier 2 : il chevauche le palier précédent (il doit commencer après 10 000 FCFA)." })
   })
 
   it("refuses an open tier that is not the last, decimals, negatives and an empty scale", () => {

@@ -138,8 +138,10 @@ commission du jour = commission de ce palier (0 si aucun palier)
 - Le barème (`OperatorCommissionTier` : `minAmount`, `maxAmount` inclus, `commission`) est
   **global**, saisi par l'Admin SaaS, identique pour toutes les organisations. Les
   organisations le voient en lecture seule.
-- Paliers **contigus** : chaque palier commence au maximum du précédent + 1 (ni trou ni
-  chevauchement, contrôle bloquant). Seul le dernier peut être ouvert (`maxAmount` null).
+- Paliers **sans chevauchement** (contrôle bloquant). Un trou est permis pour recopier le
+  barème publié (ex. 9 995 puis 10 000) : un volume qui tombe dans un trou compte pour le
+  **palier inférieur**. Seul le dernier palier peut être ouvert (`maxAmount` null) ; au-delà
+  d'un dernier palier fermé, la commission du jour vaut 0.
 - Un nouveau barème **ferme** les paliers en vigueur (`validTo`) et en crée de nouveaux
   (`validFrom`) : jamais de modification ni de suppression.
 - À la saisie, un dépôt ou un retrait de cet opérateur a `commission = 0`,

@@ -14,8 +14,9 @@ export type TierCheck = { ok: true; tiers: Tier[] } | { ok: false; error: string
 
 const MAX_TIERS = 50
 
-// A scale is valid when its tiers follow each other with neither gap nor overlap (each one starts
-// at the previous maximum + 1), in whole francs; only the last one may be open ("and above").
+// A scale is valid when its tiers follow each other without overlap, in whole francs; only the
+// last one may be open ("and above"). A gap is allowed (Wave prints 9 995 then 10 000): a volume
+// falling in it counts for the tier below (see dailyCommission).
 export function checkTiers(input: readonly Tier[]): TierCheck {
   if (input.length === 0) return { ok: false, error: "Ajoutez au moins un palier." }
   if (input.length > MAX_TIERS) return { ok: false, error: `${MAX_TIERS} paliers au maximum.` }
@@ -29,13 +30,8 @@ export function checkTiers(input: readonly Tier[]): TierCheck {
     if (tier.maxAmount === null && !last) return { ok: false, error: `${line} : seul le dernier palier peut être sans maximum.` }
     if (tier.maxAmount !== null && tier.maxAmount < tier.minAmount) return { ok: false, error: `${line} : le maximum est inférieur au minimum.` }
     const previous = tiers[index - 1]
-    if (previous && previous.maxAmount !== null && tier.minAmount !== previous.maxAmount + 1) {
-      return {
-        ok: false,
-        error: tier.minAmount <= previous.maxAmount
-          ? `${line} : il chevauche le palier précédent.`
-          : `${line} : il doit commencer à ${formatFCFA(previous.maxAmount + 1)}, juste après le palier précédent.`,
-      }
+    if (previous && previous.maxAmount !== null && tier.minAmount <= previous.maxAmount) {
+      return { ok: false, error: `${line} : il chevauche le palier précédent (il doit commencer après ${formatFCFA(previous.maxAmount)}).` }
     }
   }
   return { ok: true, tiers }
@@ -48,9 +44,14 @@ export type DailyCommission = {
   next: { tier: Tier; missing: number } | null // the next tier and how much volume it still needs
 }
 
+// The tier reached is the highest one whose minimum the volume has reached: a volume in a gap
+// between two tiers counts for the tier below. Above a closed last tier, nothing is earned.
 export function dailyCommission(scale: readonly Tier[], volume: number): DailyCommission {
   const tiers = [...scale].sort((a, b) => a.minAmount - b.minAmount)
-  const index = tiers.findIndex((tier) => volume >= tier.minAmount && (tier.maxAmount === null || volume <= tier.maxAmount))
+  const reached = tiers.findLastIndex((tier) => volume >= tier.minAmount)
+  const last = tiers.at(-1)
+  const beyond = reached >= 0 && reached === tiers.length - 1 && last?.maxAmount != null && volume > last.maxAmount
+  const index = beyond ? -1 : reached
   const tier = index >= 0 ? tiers[index] : null
   const upcoming = tier ? tiers[index + 1] : tiers.find((candidate) => candidate.minAmount > volume)
   return {
