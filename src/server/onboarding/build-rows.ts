@@ -5,6 +5,7 @@ import { buildBranchAccounts, type CatalogOperator } from "@/server/branches/acc
 
 export { UnknownOperatorError, type CatalogOperator } from "@/server/branches/accounts"
 
+// Deliberately 7 days, not the 14 of the cahier des charges (section 13): owner's decision.
 export const TRIAL_DAYS = 7
 
 export type ProvisioningContext = {
