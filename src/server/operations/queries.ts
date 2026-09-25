@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client"
 import type { TransactionType } from "@/generated/prisma/enums"
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import { formatPhone, maskPhone } from "@/lib/phone"
 import type { ActorContext } from "@/server/auth/actor"
 import { planCancellation } from "@/server/operations/cancel-rules"
@@ -14,6 +15,7 @@ export type OperationRow = {
   noRule: boolean
   operatorName: string
   operatorColor: string | null
+  operatorLogoSrc: string | null
   branchName: string
   authorName: string
   customerPhone: string | null // already masked for agents
@@ -39,7 +41,7 @@ export const OPERATION_SELECT = {
   branchId: true,
   memberId: true,
   closingId: true,
-  operator: { select: { name: true, color: true } },
+  operator: { select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } } },
   branch: { select: { name: true } },
   member: { select: { name: true } },
 } satisfies Prisma.TransactionSelect
@@ -58,6 +60,7 @@ export function toOperationRow(ctx: ActorContext, operation: SelectedOperation, 
     noRule: operation.noRule,
     operatorName: operation.operator.name,
     operatorColor: operation.operator.color,
+    operatorLogoSrc: operatorLogoSrc(operation.operator.id, operation.operator.logo?.updatedAt),
     branchName: operation.branch.name,
     authorName: operation.member.name,
     customerPhone: phone ? (ctx.actor.role === "AGENT" ? maskPhone(phone) : formatPhone(phone)) : null,

@@ -1,6 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, Banknote, ChevronRight, Zap } from "lucide-react"
 import Link from "next/link"
 
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { THRESHOLD_POSITION } from "@/lib/balance-level"
 import { formatTime } from "@/lib/dates"
 import { formatFCFA } from "@/lib/money"
@@ -8,10 +9,6 @@ import { TYPE_LABELS } from "@/lib/operation-types"
 import { cn } from "@/lib/utils"
 import type { TodaySummary } from "@/server/dashboard/today"
 import type { OperationRow } from "@/server/operations/queries"
-
-function initials(name: string): string {
-  return name.split(" ").filter((word) => word.toLowerCase() !== "by").slice(0, 2).map((word) => word[0]).join("").toUpperCase()
-}
 
 // Balances of the accounts (mockup 02): one card each, with the level against the alert threshold.
 export function BalanceCards({ today, canEnter }: { today: TodaySummary; canEnter: boolean }) {
@@ -27,15 +24,17 @@ export function BalanceCards({ today, canEnter }: { today: TodaySummary; canEnte
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
         {today.balances.map((balance) => {
-          const color = balance.color ?? "var(--primary)"
           const low = balance.level.low
           return (
             <li key={balance.id} className={cn("flex flex-col gap-3 rounded-2xl border bg-card p-4", low && "border-brand-accent/60 bg-brand-accent/[0.06]")}>
               <div className="flex items-center gap-2.5">
-                <span aria-hidden className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold", balance.kind === "CASH" && "bg-accent text-accent-foreground")}
-                  style={balance.kind === "CASH" ? undefined : { color, backgroundColor: `color-mix(in srgb, ${color} 16%, white)` }}>
-                  {balance.kind === "CASH" ? <Banknote className="size-4" /> : initials(balance.label)}
-                </span>
+                {balance.kind === "CASH" ? (
+                  <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                    <Banknote className="size-4" />
+                  </span>
+                ) : (
+                  <OperatorBadge name={balance.label} color={balance.color} logoSrc={balance.logoSrc} className="size-9 text-xs" />
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{balance.label}</span>
                   {today.showBranch && <span className="block truncate text-xs text-muted-foreground">{balance.branchName}</span>}
@@ -105,8 +104,10 @@ export function RecentOperations({ operations }: { operations: readonly Operatio
                 <span className="min-w-0 flex-1">
                   <span className={cn("flex items-center gap-2 font-semibold", cancelled && "text-muted-foreground line-through")}>
                     {TYPE_LABELS[operation.type]}
-                    <span className="rounded px-1.5 py-0.5 text-[11px] font-bold no-underline"
+                    <span className="inline-flex items-center gap-1 rounded py-0.5 pr-1.5 pl-0.5 text-[11px] font-bold no-underline"
                       style={{ color: operation.operatorColor ?? undefined, backgroundColor: `color-mix(in srgb, ${operation.operatorColor ?? "var(--primary)"} 14%, white)` }}>
+                      <OperatorBadge name={operation.operatorName} color={operation.operatorColor} logoSrc={operation.operatorLogoSrc}
+                        className="size-5 border-0 p-0.5 text-[8px]" />
                       {operation.operatorName}
                     </span>
                   </span>

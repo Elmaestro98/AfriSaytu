@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { Button } from "@/components/ui/button"
 import { formatTime } from "@/lib/dates"
 import { formatFCFA } from "@/lib/money"
@@ -11,14 +12,9 @@ import type { OperationRow } from "@/server/operations/queries"
 
 import { CancelPanel } from "./cancel-panel"
 
-function initials(name: string): string {
-  return name.split(" ").filter((word) => word.toLowerCase() !== "by").slice(0, 2).map((word) => word[0]).join("").toUpperCase()
-}
-
 export function OperationItem({ operation, showAuthor }: { operation: OperationRow; showAuthor: boolean }) {
   const [cancelling, setCancelling] = useState(false)
   const cancelled = operation.status === "CANCELLED"
-  const color = operation.operatorColor ?? "var(--primary)"
 
   const details = [
     operation.customerPhone,
@@ -30,13 +26,8 @@ export function OperationItem({ operation, showAuthor }: { operation: OperationR
   return (
     <li className={cn("flex flex-col gap-3 rounded-2xl border bg-card p-4", cancelled && "bg-muted")}>
       <div className="flex items-start gap-3">
-        <span
-          aria-hidden
-          className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl font-heading font-bold", cancelled && "opacity-50")}
-          style={{ color, backgroundColor: `color-mix(in srgb, ${color} 16%, white)` }}
-        >
-          {initials(operation.operatorName)}
-        </span>
+        <OperatorBadge name={operation.operatorName} color={operation.operatorColor} logoSrc={operation.operatorLogoSrc}
+          className={cn("size-11 font-heading text-base", cancelled && "opacity-50")} />
         <div className="min-w-0 flex-1">
           <p className={cn("font-semibold", cancelled && "text-muted-foreground")}>
             {TYPE_LABELS[operation.type]} {operation.operatorName}

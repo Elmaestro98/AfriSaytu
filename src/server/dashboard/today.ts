@@ -1,4 +1,5 @@
 import { balanceLevel, type BalanceLevel } from "@/lib/balance-level"
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { buildAlerts, STALE_HOURS, type Alert } from "@/server/dashboard/alerts"
@@ -11,6 +12,7 @@ export type TodayBalance = {
   label: string
   branchName: string
   color: string | null
+  logoSrc: string | null
   kind: "OPERATOR" | "CASH"
   balance: number
   alertThreshold: number | null
@@ -50,7 +52,7 @@ export async function getTodaySummary(ctx: ActorContext, now = new Date()): Prom
     ctx.db.account.findMany({
       where: { isActive: true, branch: branchWhere },
       orderBy: [{ branch: { createdAt: "asc" } }, { kind: "asc" }, { label: "asc" }],
-      select: { id: true, label: true, kind: true, alertThreshold: true, branch: { select: { name: true } }, operator: { select: { color: true } } },
+      select: { id: true, label: true, kind: true, alertThreshold: true, branch: { select: { name: true } }, operator: { select: { id: true, color: true, logo: { select: { updatedAt: true } } } } },
     }),
     ctx.db.branch.findMany({
       where: branchWhere,
@@ -75,6 +77,7 @@ export async function getTodaySummary(ctx: ActorContext, now = new Date()): Prom
       label: account.label,
       branchName: account.branch.name,
       color: account.operator?.color ?? null,
+      logoSrc: account.operator ? operatorLogoSrc(account.operator.id, account.operator.logo?.updatedAt) : null,
       kind: account.kind,
       balance,
       alertThreshold: account.alertThreshold,

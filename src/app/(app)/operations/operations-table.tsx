@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react"
 
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { Button } from "@/components/ui/button"
 import { formatDayLabel, formatTime } from "@/lib/dates"
 import { formatFCFA } from "@/lib/money"
@@ -39,7 +40,6 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
         <tbody className="divide-y">
           {operations.map((operation) => {
             const cancelled = operation.status === "CANCELLED"
-            const color = operation.operatorColor ?? "var(--primary)"
             return (
               <Fragment key={operation.id}>
                 <tr className={cn(cancelled && "bg-muted/50")}>
@@ -49,7 +49,8 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn("flex items-center gap-2 font-semibold", cancelled && "text-muted-foreground")}>
-                      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                      <OperatorBadge name={operation.operatorName} color={operation.operatorColor} logoSrc={operation.operatorLogoSrc}
+                        className={cn("size-7 text-[10px]", cancelled && "opacity-50")} />
                       {TYPE_LABELS[operation.type]} {operation.operatorName}
                     </span>
                     {cancelled && (
