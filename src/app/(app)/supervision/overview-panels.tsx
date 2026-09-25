@@ -1,5 +1,6 @@
 import { Activity, Coins, Scale, TrendingUp } from "lucide-react"
 
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { KpiCard } from "@/components/business/dashboard/kpi-card"
 import { formatAmount, formatFCFA } from "@/lib/money"
 import type { Network } from "@/server/supervision/network"
@@ -57,8 +58,11 @@ export function OperatorSplit({ overview }: { overview: Overview }) {
           {overview.operators.map((operator) => (
             <li key={operator.id} className="flex flex-col gap-1">
               <div className="flex items-baseline justify-between gap-2 text-sm">
-                <span className="truncate font-semibold">{operator.name}</span>
-                <span className="font-bold tabular-nums">{operator.percent} %</span>
+                <span className="flex min-w-0 items-center gap-2 font-semibold">
+                  <OperatorBadge name={operator.name} color={operator.color} logoSrc={operator.logoSrc} className="size-6 text-[9px]" />
+                  <span className="truncate">{operator.name}</span>
+                </span>
+                <span className="shrink-0 font-bold whitespace-nowrap tabular-nums">{operator.percent} %</span>
               </div>
               <div className="h-1.5 rounded-full bg-muted" aria-hidden>
                 <div className="h-1.5 rounded-full" style={{ width: `${operator.percent}%`, backgroundColor: operator.color ?? "var(--primary)" }} />

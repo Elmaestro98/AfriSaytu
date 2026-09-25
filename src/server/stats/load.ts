@@ -1,9 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client"
 import type { TransactionTypeKey } from "@/lib/operation-types"
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize, type Actor } from "@/server/auth/permissions"
-import { visibilityWhere } from "@/server/operations/history-where"
 import { dailyBranchScope, loadDailyRange, sumBy, totalOf } from "@/server/commissions/daily-range"
+import { visibilityWhere } from "@/server/operations/history-where"
 import { averageCommission, chartDays, chartStart, dailyTotals, typeBreakdown, type DayTotals, type TypeShare } from "@/server/stats/compute"
 import { percentChange, periodRanges, shares, type Range, type SupervisionPeriod } from "@/server/supervision/compute"
 
@@ -15,7 +16,7 @@ export function statsWhere(actor: Actor, range: Range): Prisma.TransactionWhereI
   return { AND: [visibilityWhere(actor), { status: "VALID", createdAt: { gte: range.from, lte: range.to } }] }
 }
 
-export type OperatorStat = { id: string; name: string; color: string | null; volume: number; commission: number; percent: number }
+export type OperatorStat = { id: string; name: string; color: string | null; logoSrc: string | null; volume: number; commission: number; percent: number }
 export type AgentStat = { memberId: string; name: string; count: number; volume: number; commission: number }
 
 export type Stats = {
@@ -64,7 +65,7 @@ export async function loadStats(ctx: ActorContext, period: SupervisionPeriod, no
   ])
 
   const [operators, members] = await Promise.all([
-    ctx.db.operatorCatalog.findMany({ where: { id: { in: byOperator.map((row) => row.operatorId) } }, select: { id: true, name: true, color: true } }),
+    ctx.db.operatorCatalog.findMany({ where: { id: { in: byOperator.map((row) => row.operatorId) } }, select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } } }),
     showAgents ? ctx.db.member.findMany({ where: { id: { in: byMember.map((row) => row.memberId) } }, select: { id: true, name: true } }) : Promise.resolve([]),
   ])
   const operatorById = new Map(operators.map((operator) => [operator.id, operator]))
@@ -93,6 +94,7 @@ export async function loadStats(ctx: ActorContext, period: SupervisionPeriod, no
         id: row.operatorId,
         name: operatorById.get(row.operatorId)?.name ?? "Opérateur",
         color: operatorById.get(row.operatorId)?.color ?? null,
+        logoSrc: operatorLogoSrc(row.operatorId, operatorById.get(row.operatorId)?.logo?.updatedAt),
         volume: row._sum.amount ?? 0,
         commission: (row._sum.commission ?? 0) + (dailyByOperator.get(row.operatorId) ?? 0),
         percent: operatorPercent.get(row.operatorId) ?? 0,

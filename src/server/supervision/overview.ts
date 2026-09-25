@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client"
+import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { ActorContext } from "@/server/auth/actor"
 import { loadDailyRange, totalOf } from "@/server/commissions/daily-range"
 import {
@@ -28,7 +29,7 @@ function validIn(scope: string[] | null, range: Range): Prisma.TransactionWhereI
   return { ...inScope(scope), status: "VALID", createdAt: { gte: range.from, lte: range.to } }
 }
 
-export type OperatorShare = { id: string; name: string; color: string | null; volume: number; percent: number }
+export type OperatorShare = { id: string; name: string; color: string | null; logoSrc: string | null; volume: number; percent: number }
 
 export type Overview = {
   volume: number
@@ -61,7 +62,7 @@ export async function loadOverview(ctx: ActorContext, scope: string[] | null, pe
 
   const operators = await ctx.db.operatorCatalog.findMany({
     where: { id: { in: byOperator.map((row) => row.operatorId) } },
-    select: { id: true, name: true, color: true },
+    select: { id: true, name: true, color: true, logo: { select: { updatedAt: true } } },
   })
   const operatorById = new Map(operators.map((operator) => [operator.id, operator]))
   const operatorShares = shares(byOperator.map((row) => ({ id: row.operatorId, value: row._sum.amount ?? 0 })))
@@ -85,6 +86,7 @@ export async function loadOverview(ctx: ActorContext, scope: string[] | null, pe
         id: share.id,
         name: operatorById.get(share.id)?.name ?? "Opérateur",
         color: operatorById.get(share.id)?.color ?? null,
+        logoSrc: operatorLogoSrc(share.id, operatorById.get(share.id)?.logo?.updatedAt),
         volume: share.value,
         percent: share.percent,
       }))

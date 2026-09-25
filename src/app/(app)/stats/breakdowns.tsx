@@ -1,8 +1,9 @@
+import { OperatorBadge } from "@/components/business/operator-badge"
 import { formatAmount, formatFCFA } from "@/lib/money"
 import type { AgentStat, OperatorStat } from "@/server/stats/load"
 import type { TypeShare } from "@/server/stats/compute"
 
-type BreakdownRow = { id: string; name: string; color: string | null; volume: number; commission: number; count?: number; percent: number }
+type BreakdownRow = { id: string; name: string; color: string | null; logoSrc?: string | null; volume: number; commission: number; count?: number; percent: number }
 
 // One line per item: name, share of the volume as a bar, volume and commission.
 function BreakdownList({ title, rows }: { title: string; rows: readonly BreakdownRow[] }) {
@@ -13,8 +14,9 @@ function BreakdownList({ title, rows }: { title: string; rows: readonly Breakdow
       <ul className="flex flex-col gap-4">
         {rows.map((row) => (
           <li key={row.id} className="flex flex-col gap-1.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate font-semibold">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-2 truncate font-semibold">
+                {row.logoSrc !== undefined && <OperatorBadge name={row.name} color={row.color} logoSrc={row.logoSrc} className="size-7 text-[10px]" />}
                 {row.name}
                 {row.count !== undefined && <span className="font-normal text-muted-foreground"> · {formatAmount(row.count)} op.</span>}
               </span>
