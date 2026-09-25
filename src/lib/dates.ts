@@ -54,3 +54,31 @@ export function addCalendarMonths(date: Date, months: number): Date {
   result.setUTCFullYear(firstOfTarget.getUTCFullYear(), firstOfTarget.getUTCMonth(), Math.min(date.getUTCDate(), lastDay))
   return result
 }
+
+// Months as "2026-09" (Dakar calendar), for monthly reports such as the commission reconciliation.
+export function monthKey(date: Date): string {
+  return dayKey(date).slice(0, 7)
+}
+
+export function isMonthKey(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+}
+
+// "2026-09" -> "2026-08"; `offset` months later (negative: earlier).
+export function shiftMonth(key: string, offset: number): string {
+  return monthKey(addCalendarMonths(new Date(`${key}-01T12:00:00.000Z`), offset))
+}
+
+// First and last instant of a month in Dakar (UTC+0 all year).
+export function monthRange(key: string): { from: Date; to: Date } {
+  const from = new Date(`${key}-01T00:00:00.000Z`)
+  const to = new Date(new Date(`${shiftMonth(key, 1)}-01T00:00:00.000Z`).getTime() - 1)
+  return { from, to }
+}
+
+const monthFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, month: "long", year: "numeric" })
+
+// "2026-09" -> "septembre 2026"
+export function formatMonth(key: string): string {
+  return monthFormat.format(new Date(`${key}-15T12:00:00.000Z`))
+}

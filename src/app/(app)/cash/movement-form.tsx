@@ -9,9 +9,12 @@ import { Label } from "@/components/ui/label"
 import { MOVEMENT_HELP, MOVEMENT_KINDS, MOVEMENT_LABELS, type MovementKindKey } from "@/lib/movement-kinds"
 import { cn } from "@/lib/utils"
 import { newUuid } from "@/lib/uuid"
+import { defaultPayoutMonth } from "@/server/cash/payout"
 import type { CashAccount } from "@/server/cash/queries"
 
+import { AccountChoice } from "./account-choice"
 import { createMovementAction } from "./actions"
+import { PayoutFields } from "./payout-fields"
 
 type MovementFormProps = {
   branchId: string
@@ -20,23 +23,6 @@ type MovementFormProps = {
   initialAccountId?: string
   onDone: (message: string, warning: string | null) => void
   onCancel: () => void
-}
-
-function AccountChoice({ label, accounts, value, onChange }: { label: string; accounts: readonly CashAccount[]; value: string; onChange: (id: string) => void }) {
-  return (
-    <div className="flex flex-col gap-2" role="radiogroup" aria-label={label}>
-      <p className="text-sm font-medium">{label}</p>
-      <div className="grid grid-cols-2 gap-2">
-        {accounts.map((account) => (
-          <button key={account.id} type="button" role="radio" aria-checked={value === account.id} onClick={() => onChange(account.id)}
-            className={cn("flex h-12 items-center justify-center gap-2 rounded-lg border-2 px-2 text-sm font-semibold", value === account.id ? "border-primary bg-accent" : "border-border bg-card")}>
-            <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-primary" style={account.color ? { backgroundColor: account.color } : undefined} />
-            <span className="truncate">{account.label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 export function MovementForm({ branchId, accounts, initialKind, initialAccountId, onDone, onCancel }: MovementFormProps) {
@@ -48,6 +34,8 @@ export function MovementForm({ branchId, accounts, initialKind, initialAccountId
   const [otherOperatorId, setOtherOperatorId] = useState(operators.find((account) => account.id !== operatorId)?.id ?? "")
   const [payoutAccountId, setPayoutAccountId] = useState(operators[0]?.id ?? cash?.id ?? "")
   const [viaCash, setViaCash] = useState(true) // top-up paid from the drawer / sale paid into it
+  const [payoutOperatorId, setPayoutOperatorId] = useState(operators[0]?.operatorId ?? "")
+  const [payoutMonth, setPayoutMonth] = useState(() => defaultPayoutMonth(new Date()))
   const [description, setDescription] = useState("")
   const [key] = useState(() => newUuid())
   const [error, setError] = useState<string | null>(null)
@@ -69,7 +57,12 @@ export function MovementForm({ branchId, accounts, initialKind, initialAccountId
   const submit = () => {
     setError(null)
     startTransition(async () => {
-      const result = await createMovementAction({ idempotencyKey: key, branchId, kind, amount, description, ...accountsFor() })
+      // A payout on a UV account comes from that account's operator; in cash, the one chosen.
+      const receivedOn = accounts.find((account) => account.id === payoutAccountId)
+      const payout = kind === "COMMISSION_PAYOUT"
+        ? { operatorId: receivedOn?.operatorId ?? payoutOperatorId, payoutMonth }
+        : { operatorId: null, payoutMonth: null }
+      const result = await createMovementAction({ idempotencyKey: key, branchId, kind, amount, description, ...accountsFor(), ...payout })
       if (result.ok) onDone(result.message, result.warning)
       else setError(result.error)
     })
@@ -96,7 +89,8 @@ export function MovementForm({ branchId, accounts, initialKind, initialAccountId
         <AccountChoice label="Compte crédité" accounts={operators.filter((account) => account.id !== operatorId)} value={otherOperatorId} onChange={setOtherOperatorId} />
       )}
       {kind === "COMMISSION_PAYOUT" && (
-        <AccountChoice label="Reçue sur" accounts={accounts} value={payoutAccountId} onChange={setPayoutAccountId} />
+        <PayoutFields accounts={accounts} payoutAccountId={payoutAccountId} onAccountChange={setPayoutAccountId}
+          operatorId={payoutOperatorId} onOperatorChange={setPayoutOperatorId} month={payoutMonth} onMonthChange={setPayoutMonth} />
       )}
       {(kind === "UV_TOPUP" || kind === "UV_SELL") && (
         <label className="flex min-h-11 items-center gap-3 text-sm">

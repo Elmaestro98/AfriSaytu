@@ -1,4 +1,5 @@
 import type { MovementKind } from "@/generated/prisma/enums"
+import { formatMonth } from "@/lib/dates"
 import type { ActorContext } from "@/server/auth/actor"
 import { getBalances } from "@/server/ledger/balances"
 
@@ -7,6 +8,7 @@ export type CashAccount = {
   kind: "OPERATOR" | "CASH"
   label: string
   color: string | null
+  operatorId: string | null // null for the cash drawer
   accountNumber: string | null
   alertThreshold: number | null
   balance: number
@@ -20,6 +22,7 @@ export type MovementRow = {
   authorName: string
   fromLabel: string | null
   toLabel: string | null
+  payoutLabel: string | null // commission payout: "Wave · septembre 2026"
   createdAt: Date
 }
 
@@ -45,7 +48,7 @@ export async function loadCashContext(ctx: ActorContext, requestedBranchId?: str
     ctx.db.account.findMany({
       where: { branchId: branch.id, isActive: true },
       orderBy: [{ kind: "asc" }, { label: "asc" }], // operators first, cash drawer last
-      select: { id: true, kind: true, label: true, accountNumber: true, alertThreshold: true, operator: { select: { color: true } } },
+      select: { id: true, kind: true, label: true, accountNumber: true, alertThreshold: true, operatorId: true, operator: { select: { color: true } } },
     }),
     ctx.db.internalMovement.findMany({
       where: { branchId: branch.id },
@@ -60,6 +63,8 @@ export async function loadCashContext(ctx: ActorContext, requestedBranchId?: str
         member: { select: { name: true } },
         fromAccount: { select: { label: true } },
         toAccount: { select: { label: true } },
+        operator: { select: { name: true } },
+        payoutMonth: true,
       },
     }),
   ])
@@ -73,6 +78,7 @@ export async function loadCashContext(ctx: ActorContext, requestedBranchId?: str
       kind: account.kind,
       label: account.label,
       color: account.operator?.color ?? null,
+      operatorId: account.operatorId,
       accountNumber: account.accountNumber,
       alertThreshold: account.alertThreshold,
       balance: balances.get(account.id) ?? 0,
@@ -85,6 +91,9 @@ export async function loadCashContext(ctx: ActorContext, requestedBranchId?: str
       authorName: movement.member.name,
       fromLabel: movement.fromAccount?.label ?? null,
       toLabel: movement.toAccount?.label ?? null,
+      payoutLabel: movement.payoutMonth
+        ? [movement.operator?.name, formatMonth(movement.payoutMonth)].filter(Boolean).join(" · ")
+        : null,
       createdAt: movement.createdAt,
     })),
     canViewLedger: ctx.actor.role !== "AGENT",

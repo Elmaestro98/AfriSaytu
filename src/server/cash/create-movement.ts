@@ -3,6 +3,7 @@ import { LedgerReason } from "@/generated/prisma/enums"
 import { formatFCFA } from "@/lib/money"
 import { MOVEMENT_LABELS } from "@/lib/movement-kinds"
 import type { CreateMovementInput } from "@/schemas/movement"
+import { checkPayout } from "@/server/cash/payout"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { getBalances } from "@/server/ledger/balances"
@@ -32,12 +33,22 @@ export async function createMovement(ctx: ActorContext, input: CreateMovementInp
   const ids = [input.fromAccountId, input.toAccountId].filter((id): id is string => id !== null)
   const accounts = await ctx.db.account.findMany({
     where: { id: { in: ids }, branchId: input.branchId, isActive: true },
-    select: { id: true, kind: true },
+    select: { id: true, kind: true, operatorId: true },
   })
-  const byId = new Map<string, MovementAccount>(accounts.map((account) => [account.id, account]))
+  const byId = new Map<string, MovementAccount & { operatorId: string | null }>(accounts.map((account) => [account.id, account]))
   const from = input.fromAccountId ? byId.get(input.fromAccountId) : undefined
   const to = input.toAccountId ? byId.get(input.toAccountId) : undefined
   if ((input.fromAccountId && !from) || (input.toAccountId && !to)) return { ok: false, error: ACCOUNT_ERROR }
+
+  // Commission payout: who paid and which month it covers (F-55); nothing for the other kinds.
+  let payout: { operatorId: string; payoutMonth: string } | null = null
+  if (input.kind === "COMMISSION_PAYOUT") {
+    const check = checkPayout({ operatorId: input.operatorId, payoutMonth: input.payoutMonth, accountOperatorId: to?.operatorId ?? null }, new Date())
+    if (!check.ok) return check
+    const used = await ctx.db.orgOperator.count({ where: { operatorId: check.operatorId, isActive: true } })
+    if (used === 0) return { ok: false, error: "Cet opérateur n'est pas utilisé par votre entreprise." }
+    payout = { operatorId: check.operatorId, payoutMonth: check.payoutMonth }
+  }
 
   let postings
   try {
@@ -69,6 +80,8 @@ export async function createMovement(ctx: ActorContext, input: CreateMovementInp
           toAccountId: to?.id ?? null,
           description: input.description,
           idempotencyKey: input.idempotencyKey,
+          operatorId: payout?.operatorId ?? null,
+          payoutMonth: payout?.payoutMonth ?? null,
         },
         select: { id: true },
       })

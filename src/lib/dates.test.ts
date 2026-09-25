@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { addCalendarMonths, dayKey, formatDayLabel, formatLongDate, formatShortDay, formatTime, startOfDakarDay } from "@/lib/dates"
+import { addCalendarMonths, dayKey, formatDayLabel, formatLongDate, formatMonth, formatShortDay, formatTime, isMonthKey, monthKey, monthRange, shiftMonth, startOfDakarDay } from "@/lib/dates"
 
 const NOW = new Date("2026-09-25T10:00:00.000Z") // Dakar is UTC+0 all year
 
@@ -47,5 +47,27 @@ describe("addCalendarMonths", () => {
   it("crosses years both ways", () => {
     expect(addCalendarMonths(new Date("2026-11-15T00:00:00.000Z"), 3)).toEqual(new Date("2027-02-15T00:00:00.000Z"))
     expect(addCalendarMonths(new Date("2027-01-15T00:00:00.000Z"), -3)).toEqual(new Date("2026-10-15T00:00:00.000Z"))
+  })
+})
+
+describe("months", () => {
+  it("gives the Dakar month of a date", () => {
+    expect(monthKey(new Date("2026-09-30T23:59:00.000Z"))).toBe("2026-09")
+    expect(monthKey(new Date("2026-10-01T00:00:00.000Z"))).toBe("2026-10")
+  })
+
+  it("moves across years", () => {
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12")
+    expect(shiftMonth("2026-12", 1)).toBe("2027-01")
+  })
+
+  it("covers the whole month, February of a leap year included", () => {
+    expect(monthRange("2028-02")).toEqual({ from: new Date("2028-02-01T00:00:00.000Z"), to: new Date("2028-02-29T23:59:59.999Z") })
+  })
+
+  it("checks the format and names the month in French", () => {
+    expect(isMonthKey("2026-09")).toBe(true)
+    expect(["2026-13", "2026-9", "septembre"].some(isMonthKey)).toBe(false)
+    expect(formatMonth("2026-09")).toBe("septembre 2026")
   })
 })

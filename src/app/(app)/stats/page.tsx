@@ -44,6 +44,13 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
     <div className="flex flex-1 flex-col">
       <AppHeader title="Statistiques" subtitle={isAgent ? "Vos opérations" : "Opérations validées"} />
       <main className={cn(PAGE, "gap-6")}>
+        {!isAgent && (
+          <Link href="/stats/reconciliation"
+            className="flex min-h-11 items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 font-semibold hover:bg-accent lg:self-start">
+            Rapprochement des commissions
+            <span className="text-sm font-normal text-muted-foreground">Estimées / reçues des opérateurs, par mois</span>
+          </Link>
+        )}
         <nav aria-label="Période" className="flex gap-1 rounded-xl border bg-card p-1 lg:self-end">
           {SUPERVISION_PERIODS.map((value) => (
             <Link key={value} href={value === "today" ? "/stats" : `/stats?period=${value}`} aria-current={value === period ? "page" : undefined} scroll={false}

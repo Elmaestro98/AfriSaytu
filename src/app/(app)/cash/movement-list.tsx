@@ -54,7 +54,7 @@ export function MovementList({ movements }: { movements: readonly MovementRow[] 
                 <p className="font-semibold">{MOVEMENT_LABELS[movement.kind]}</p>
                 {route && <p className="truncate text-sm">{route}</p>}
                 <p className="truncate text-sm text-muted-foreground">
-                  {[movement.authorName, `${formatDayLabel(movement.createdAt)} ${formatTime(movement.createdAt)}`, movement.description].filter(Boolean).join(" · ")}
+                  {[movement.payoutLabel, movement.authorName, `${formatDayLabel(movement.createdAt)} ${formatTime(movement.createdAt)}`, movement.description].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <p className={cn("font-heading font-bold whitespace-nowrap tabular-nums", sign === "+" && "text-primary", sign === "−" && "text-brand-accent-strong")}>

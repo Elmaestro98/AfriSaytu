@@ -17,6 +17,9 @@ export const createMovementSchema = z.object({
     .trim()
     .max(200, "Description trop longue")
     .transform((value) => (value === "" ? null : value)),
+  // Commission payout only (checked on the server with the receiving account).
+  operatorId: z.string().min(1).nullable().optional(),
+  payoutMonth: z.string().nullable().optional(),
 })
 
 export type CreateMovementForm = z.input<typeof createMovementSchema>
