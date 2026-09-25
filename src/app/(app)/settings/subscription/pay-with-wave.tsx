@@ -40,7 +40,7 @@ export function PayWithWave({ defaultPlan }: { defaultPlan: SubscriptionPlan }) 
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border-2 border-primary bg-card p-4 lg:p-5">
+    <section id="payer" className="flex scroll-mt-24 flex-col gap-4 rounded-2xl border-2 border-primary bg-card p-4 lg:p-5">
       <h2 className="font-heading text-lg font-bold">Payer mon abonnement</h2>
 
       <div role="group" aria-label="Formule" className="flex gap-1 rounded-xl border p-1">

@@ -1,4 +1,5 @@
 import { Check } from "lucide-react"
+import Link from "next/link"
 
 import type { SubscriptionPlan } from "@/generated/prisma/enums"
 import { formatAmount, formatFCFA } from "@/lib/money"
@@ -14,7 +15,8 @@ function limitText(limit: number | null, one: string, many: string): string {
 
 // The three plans side by side (cahier 13), the current one highlighted. Paying is done with
 // Wave, on the same screen (pay-with-wave.tsx).
-export function PlanCards({ current }: { current: SubscriptionPlan }) {
+// canChoose: the payment block is on the screen (Wave configured, no payment pending).
+export function PlanCards({ current, selected, canChoose }: { current: SubscriptionPlan; selected: SubscriptionPlan; canChoose: boolean }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="font-heading text-lg font-bold">Les formules</h2>
@@ -44,6 +46,13 @@ export function PlanCards({ current }: { current: SubscriptionPlan }) {
                   </li>
                 ))}
               </ul>
+              {canChoose && (
+                <Link href={`/settings/subscription?plan=${plan}#payer`} scroll={false} aria-current={plan === selected ? "true" : undefined}
+                  className={cn("flex h-11 items-center justify-center rounded-xl font-semibold",
+                    plan === selected ? "bg-primary text-primary-foreground" : "border hover:bg-accent")}>
+                  {plan === selected ? "Formule sélectionnée" : isCurrent ? "Renouveler cette formule" : "Choisir cette formule"}
+                </Link>
+              )}
             </article>
           )
         })}

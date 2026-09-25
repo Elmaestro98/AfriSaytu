@@ -7,12 +7,15 @@ import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
+import { waveCheckoutUrl } from "@/server/billing/wave"
 import { deadlineLine, statusLabel } from "@/server/plans/banner"
 import { PLAN_LABELS } from "@/server/plans/limits"
 import { SubscriptionAccessError, loadSubscriptionOverview } from "@/server/plans/overview"
 
 import { PayWithWave } from "./pay-with-wave"
 import { PlanCards } from "./plan-cards"
+
+const PLANS = ["BASIC", "PRO", "BUSINESS"] as const
 
 const PAYMENT_STATUS = { PENDING: "En attente de confirmation", PAID: "Confirmé", FAILED: "Refusé" } as const
 
@@ -34,7 +37,7 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 }
 
 // "Mon abonnement" (F-60 to F-62): status, deadline, usage against the plan, the plans. Owner only.
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage({ searchParams }: PageProps<"/settings/subscription">) {
   let ctx
   try {
     ctx = await requireActor()
@@ -52,6 +55,10 @@ export default async function SubscriptionPage() {
   }
   const { plan, state, limits, usage, payments } = overview
   const pending = payments.find((payment) => payment.status === "PENDING")
+  // The plan chosen on a card comes through the address (?plan=PRO); anything else: the current one.
+  const requested = (await searchParams).plan
+  const selected = PLANS.find((value) => value === requested) ?? plan
+  const canPay = !pending && waveCheckoutUrl(process.env.NEXT_PUBLIC_WAVE_PAYMENT_URL, 1) !== null
   const deadline = deadlineLine(state, formatLongDate)
 
   return (
@@ -82,10 +89,10 @@ export default async function SubscriptionPage() {
             </span>
           </p>
         ) : (
-          <PayWithWave defaultPlan={plan} />
+          <PayWithWave key={selected} defaultPlan={selected} />
         )}
 
-        <PlanCards current={plan} />
+        <PlanCards current={plan} selected={selected} canChoose={canPay} />
 
         {payments.length > 0 && (
           <section className="flex flex-col gap-2">
