@@ -14,9 +14,10 @@ import { declarePaymentAction } from "./actions"
 const PLANS: readonly SubscriptionPlan[] = ["BASIC", "PRO", "BUSINESS"]
 const CHOICE = "h-11 flex-1 rounded-lg px-3 text-sm font-semibold"
 
-// Pay with the SaaS owner's Wave link, then declare the payment with its Wave reference.
+// Pay with the SaaS owner's Wave link (given by the server), then declare the payment with its
+// Wave reference.
 // The amount shown is only a guide: the server computes it again from the plan and the months.
-export function PayWithWave({ defaultPlan }: { defaultPlan: SubscriptionPlan }) {
+export function PayWithWave({ defaultPlan, waveLink }: { defaultPlan: SubscriptionPlan; waveLink: string }) {
   const [plan, setPlan] = useState<SubscriptionPlan>(defaultPlan)
   const [months, setMonths] = useState<PayableMonths>(1)
   const [reference, setReference] = useState("")
@@ -24,7 +25,7 @@ export function PayWithWave({ defaultPlan }: { defaultPlan: SubscriptionPlan }) 
   const [isPending, startTransition] = useTransition()
 
   const amount = subscriptionPrice(plan, months)
-  const payUrl = waveCheckoutUrl(process.env.NEXT_PUBLIC_WAVE_PAYMENT_URL, amount)
+  const payUrl = waveCheckoutUrl(waveLink, amount)
 
   const declare = () => {
     setMessage(null)
@@ -35,9 +36,7 @@ export function PayWithWave({ defaultPlan }: { defaultPlan: SubscriptionPlan }) 
     })
   }
 
-  if (!payUrl) {
-    return <p className="rounded-2xl border bg-card p-4 text-sm">Le paiement en ligne n&apos;est pas encore disponible. Contactez le support AfriSaytu pour régler votre abonnement.</p>
-  }
+  if (!payUrl) return null // the page only renders this block with a valid Wave link
 
   return (
     <section id="payer" className="flex scroll-mt-24 flex-col gap-4 rounded-2xl border-2 border-primary bg-card p-4 lg:p-5">

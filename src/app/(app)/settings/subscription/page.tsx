@@ -7,7 +7,7 @@ import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
-import { waveCheckoutUrl } from "@/server/billing/wave"
+import { configuredWaveLink } from "@/server/billing/wave"
 import { deadlineLine, statusLabel } from "@/server/plans/banner"
 import { PLAN_LABELS } from "@/server/plans/limits"
 import { SubscriptionAccessError, loadSubscriptionOverview } from "@/server/plans/overview"
@@ -58,7 +58,8 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/set
   // The plan chosen on a card comes through the address (?plan=PRO); anything else: the current one.
   const requested = (await searchParams).plan
   const selected = PLANS.find((value) => value === requested) ?? plan
-  const canPay = !pending && waveCheckoutUrl(process.env.NEXT_PUBLIC_WAVE_PAYMENT_URL, 1) !== null
+  const waveLink = configuredWaveLink()
+  const canPay = !pending && waveLink !== null
   const deadline = deadlineLine(state, formatLongDate)
 
   return (
@@ -88,8 +89,12 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/set
               Référence Wave {pending.providerRef}. Votre abonnement sera activé dès que nous aurons vérifié la réception.
             </span>
           </p>
+        ) : waveLink ? (
+          <PayWithWave key={selected} defaultPlan={selected} waveLink={waveLink} />
         ) : (
-          <PayWithWave key={selected} defaultPlan={selected} />
+          <p className="rounded-2xl border bg-card p-4 text-sm">
+            Le paiement en ligne n&apos;est pas encore disponible. Contactez le support AfriSaytu pour régler votre abonnement.
+          </p>
         )}
 
         <PlanCards current={plan} selected={selected} canChoose={canPay} />

@@ -1,5 +1,7 @@
 // Payment of the subscription through the SaaS owner's Wave merchant link (not an API: AfriSaytu
-// never moves money itself). The link comes from NEXT_PUBLIC_WAVE_PAYMENT_URL.
+// never moves money itself). The link comes from NEXT_PUBLIC_WAVE_PAYMENT_URL, read by the SERVER
+// at request time and handed to the page: a copy inlined in the browser bundle at build time could
+// differ from it and break hydration.
 
 const WAVE_ORIGIN = "https://pay.wave.com"
 
@@ -16,4 +18,10 @@ export function waveCheckoutUrl(base: string | undefined, amount: number): strin
   if (url.origin !== WAVE_ORIGIN || url.username || url.password) return null
   url.searchParams.set("amount", String(amount))
   return url.toString()
+}
+
+// The configured merchant link, or null when missing or not a Wave link. Server side only.
+export function configuredWaveLink(): string | null {
+  const raw = process.env.NEXT_PUBLIC_WAVE_PAYMENT_URL
+  return raw && waveCheckoutUrl(raw, 1) !== null ? raw.trim() : null
 }
