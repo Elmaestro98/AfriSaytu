@@ -39,7 +39,7 @@ import { BalanceCards, RecentOperations } from "./today-sections";
 function AccessMessage({ title, text }: { title: string; text: string }) {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-      <BrandMark className="size-16 border" />
+      <BrandMark bare className="size-16" />
       <h1 className="font-heading text-2xl font-bold">{title}</h1>
       <p className="max-w-sm text-muted-foreground">{text}</p>
     </main>

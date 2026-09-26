@@ -25,7 +25,7 @@ export function AppHeader({ title, subtitle, backHref }: AppHeaderProps) {
             <ChevronLeft className="size-6" aria-hidden />
           </Link>
         ) : (
-          <BrandMark className="size-10 rounded-lg border shadow-none lg:hidden" />
+          <BrandMark bare className="size-10 lg:hidden" />
         )}
         <div className="min-w-0 flex-1">
           <p className="truncate font-heading text-lg leading-tight font-bold lg:text-2xl">{title}</p>

@@ -24,7 +24,7 @@ export function SideNav({ items, organizationName, memberName, roleLabel }: Side
   return (
     <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r bg-card lg:flex">
       <Link href="/dashboard" className="flex items-center gap-3 px-5 py-5">
-        <BrandMark priority className="size-11 rounded-lg border shadow-none" />
+        <BrandMark priority bare className="size-11" />
         <span className="min-w-0">
           <span className="block font-heading text-lg leading-tight font-bold">AfriSaytu</span>
           <span className="block truncate text-sm text-muted-foreground">{organizationName}</span>
