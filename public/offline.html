@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B5D4B" />
+    <title>AfriSaytu · Pas de connexion</title>
+    <style>
+      :root {
+        --primary: #0b5d4b;
+        --primary-foreground: #ffffff;
+        --background: #f6f7f5;
+        --card: #ffffff;
+        --text: #14181f;
+        --muted: #5b6470;
+        --border: #e3e6e2;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary: #2fa487;
+          --primary-foreground: #04231b;
+          --background: #0f1412;
+          --card: #171e1b;
+          --text: #eef2ef;
+          --muted: #a3ada8;
+          --border: #2a332f;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: var(--background);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main {
+        width: 100%;
+        max-width: 380px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px 22px;
+        text-align: center;
+      }
+      img { width: 64px; height: 64px; border-radius: 16px; }
+      h1 { font-size: 1.5rem; margin: 16px 0 8px; }
+      p { color: var(--muted); line-height: 1.5; margin: 0 0 12px; }
+      .safe { font-size: 0.9rem; }
+      button {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 12px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--primary);
+        color: var(--primary-foreground);
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="" />
+      <h1>Pas de connexion</h1>
+      <p>AfriSaytu a besoin d'internet pour afficher vos soldes et enregistrer les opérations.</p>
+      <p class="safe">Rien n'est perdu : tout ce qui a été validé est déjà enregistré. Vérifiez vos données mobiles ou le Wi-Fi, puis réessayez.</p>
+      <button type="button" onclick="location.reload()">Réessayer</button>
+    </main>
+  </body>
+</html>

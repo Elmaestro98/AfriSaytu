@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { ServiceWorker } from "@/components/business/service-worker";
 import "./globals.css";
 
 // Display face: headings and large amounts. Body face: everything else.
@@ -18,7 +19,14 @@ export const metadata: Metadata = {
   title: "AfriSaytu",
   description:
     "Le logiciel de caisse des agents de transfert d'argent : soldes, commissions, clôture journalière.",
-  icons: { icon: "/logo.png" },
+  icons: { icon: "/logo.png", apple: "/icons/apple-touch-icon.png" },
+  // Installed on an iPhone: full screen, own name under the icon.
+  appleWebApp: { capable: true, title: "AfriSaytu", statusBarStyle: "default" },
+};
+
+// Colour of the phone's status bar and of the installed app's title bar (#0B5D4B, brand primary).
+export const viewport: Viewport = {
+  themeColor: "#0B5D4B",
 };
 
 // Clerk renders its own widgets: they receive the brand colour and fonts here.
@@ -39,7 +47,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         lang="fr"
         className={`${display.variable} ${body.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col">{children}</body>
+        <body className="min-h-full flex flex-col">
+          {children}
+          <ServiceWorker />
+        </body>
       </html>
     </ClerkProvider>
   );

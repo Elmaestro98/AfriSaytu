@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/business/app-header";
 import { BrandMark } from "@/components/business/brand-mark";
+import { InstallAppBanner } from "@/components/business/install-app-banner";
 import { AlertsPanel } from "@/components/business/dashboard/alerts-panel";
 import { KpiCard } from "@/components/business/dashboard/kpi-card";
 import { VolumeBars } from "@/components/business/dashboard/volume-bars";
@@ -142,6 +143,8 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+
+        <InstallAppBanner />
 
         <section
           aria-label={
