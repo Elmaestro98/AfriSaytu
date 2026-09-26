@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>AfriSaytu · Kit marketing</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  :root { --primary: #0B5D4B; --accent: #F2A900; --ink: #14181F; --muted: #5B6470; --line: #E3E6E2; --soft: #EEF5F2; --warn: #FFF6DE; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; }
+  h2 { font-size: 17pt; color: var(--primary); margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid var(--accent); line-height: 1.2; }
+  h3 { font-size: 12pt; margin: 5mm 0 2mm; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.2mm; }
+  .section { page-break-before: always; }
+  .keep { page-break-inside: avoid; }
+  .muted { color: var(--muted); }
+  b { font-weight: 600; }
+
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover-band { background: var(--primary); color: #fff; border-radius: 6mm; padding: 16mm 14mm; }
+  .cover-logo { width: 34mm; height: 34mm; background: #fff; border-radius: 5mm; display: flex; align-items: center; justify-content: center; }
+  .cover-logo img { height: 28mm; }
+  .cover h1 { font-size: 30pt; margin: 10mm 0 3mm; line-height: 1.1; }
+  .cover .subtitle { font-size: 13pt; opacity: .92; margin: 0; }
+  .for { margin-top: 8mm; display: flex; gap: 3mm; flex-wrap: wrap; }
+  .pill { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.35); border-radius: 10mm; padding: 1.5mm 4mm; font-size: 10pt; }
+  .toc { columns: 2; column-gap: 8mm; padding: 0; list-style: none; }
+  .toc li { display: flex; gap: 2mm; margin-bottom: 2mm; }
+  .toc .n { color: var(--primary); font-weight: 700; min-width: 7mm; }
+
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.8pt; }
+  th, td { border: 1px solid var(--line); padding: 2mm 2.5mm; text-align: left; vertical-align: top; }
+  th { background: var(--soft); color: var(--primary); font-weight: 600; }
+  td.t { white-space: nowrap; font-weight: 600; color: var(--primary); width: 20mm; }
+
+  /* A ready-to-paste post */
+  .post { border: 1px solid var(--line); border-left: 4px solid var(--primary); border-radius: 3mm; padding: 4mm 5mm; margin: 3mm 0 4mm; background: #FCFDFC; }
+  .post p { margin-bottom: 2mm; }
+  .post .tags { color: #1D5FB8; }
+  .label { display: inline-block; font-size: 8.5pt; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--primary); background: var(--soft); border-radius: 1.5mm; padding: .5mm 2mm; margin-bottom: 2mm; }
+  .note, .warn { border-radius: 3mm; padding: 3mm 4mm; margin: 3mm 0; }
+  .note { background: var(--soft); border-left: 4px solid var(--primary); }
+  .warn { background: var(--warn); border-left: 4px solid var(--accent); }
+  .box-title { font-weight: 600; display: block; margin-bottom: 1mm; }
+  .slides { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2.5mm; margin: 2mm 0 4mm; }
+  .slide { aspect-ratio: 4 / 5; background: var(--primary); color: #fff; border-radius: 2.5mm; padding: 3mm; font-size: 8.8pt; font-weight: 600; display: flex; flex-direction: column; justify-content: space-between; }
+  .slide .n { color: var(--accent); font-size: 12pt; font-weight: 800; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-band">
+    <div class="cover-logo"><img src="../../public/logo.png" alt="AfriSaytu" /></div>
+    <h1>Kit marketing</h1>
+    <p class="subtitle">Script vidéo et textes prêts à publier sur les réseaux sociaux.<br />«&nbsp;Chaque soir, une caisse juste.&nbsp;»</p>
+    <div class="for">
+      <span class="pill">TikTok</span><span class="pill">Instagram</span><span class="pill">Facebook</span>
+      <span class="pill">WhatsApp</span><span class="pill">LinkedIn</span><span class="pill">YouTube Shorts</span>
+    </div>
+  </div>
+  <div>
+    <h3 style="margin-top:0">Sommaire</h3>
+    <ul class="toc">
+      <li><span class="n">1</span> Le message à retenir</li>
+      <li><span class="n">2</span> Script vidéo (35 à 45 s)</li>
+      <li><span class="n">3</span> Facebook</li>
+      <li><span class="n">4</span> Instagram</li>
+      <li><span class="n">5</span> WhatsApp</li>
+      <li><span class="n">6</span> LinkedIn</li>
+      <li><span class="n">7</span> Les prix, pour répondre en commentaire</li>
+      <li><span class="n">8</span> Précautions avant de publier</li>
+    </ul>
+  </div>
+  <p class="muted" style="font-size:9.5pt">Document interne, septembre 2026. Adresse du site&nbsp;: https://afri-saytu.vercel.app</p>
+</div>
+
+<!-- 1 -->
+<div class="section">
+  <h2>1. Le message à retenir</h2>
+  <p><b>Le slogan</b>&nbsp;: «&nbsp;Chaque soir, une caisse juste.&nbsp;»</p>
+  <p><b>Pour qui</b>&nbsp;: les agents et points de transfert d'argent (Wave, Orange Money, Mixx by Yas) et les propriétaires de plusieurs points de vente.</p>
+  <h3>Le problème</h3>
+  <p>À la fin de la journée, il manque de l'argent dans la caisse, et personne ne sait quelle opération ni quel opérateur en est la cause. Trois opérateurs, des dizaines d'opérations, un cahier et une calculatrice&nbsp;: on s'y perd.</p>
+  <h3>La promesse</h3>
+  <ul>
+    <li>Une opération enregistrée en <b>moins de 10 secondes</b>.</li>
+    <li>Les <b>soldes</b> par opérateur et les <b>espèces</b> calculés automatiquement.</li>
+    <li>Les <b>commissions</b> suivies chaque jour.</li>
+    <li>Une <b>clôture du soir</b> qui montre l'écart tout de suite.</li>
+    <li>Pour les propriétaires&nbsp;: <b>tous les points de vente et les agents</b>, même à distance.</li>
+  </ul>
+  <h3>L'offre</h3>
+  <p><b>7 jours gratuits</b>, puis à partir de <b>5 000 FCFA par mois</b>. Rien à télécharger sur le Play Store.</p>
+  <div class="note">
+    <span class="box-title">Phrase à toujours ajouter</span>
+    AfriSaytu ne transfère pas d'argent et ne touche jamais à vos fonds&nbsp;: vous continuez d'utiliser l'application de votre opérateur, et AfriSaytu vous aide à tout suivre.
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="section">
+  <h2>2. Script vidéo (35 à 45 s)</h2>
+  <p class="muted">Pour TikTok, Reels Instagram, Shorts YouTube et Facebook. Format vertical, filmé au téléphone dans un vrai point de transfert.</p>
+  <table class="keep">
+    <tr><th>Temps</th><th>À l'image</th><th>Voix / texte à l'écran</th></tr>
+    <tr><td class="t">0–3 s<br /><span class="muted" style="font-weight:400">accroche</span></td><td>Gros plan&nbsp;: un agent recompte des billets, l'air inquiet, un cahier plein de ratures.</td><td>«&nbsp;Il est 21 h… et il te manque encore 15 000 F dans ta caisse.&nbsp;»</td></tr>
+    <tr><td class="t">3–8 s</td><td>Plan sur le cahier, la calculatrice et trois téléphones.</td><td>«&nbsp;Trois opérateurs, des dizaines d'opérations, un cahier… Normal qu'on s'y perde.&nbsp;»</td></tr>
+    <tr><td class="t">8–12 s</td><td>L'agent ouvre AfriSaytu. Logo à l'écran.</td><td>«&nbsp;Avec <b>AfriSaytu</b>, ta caisse se tient toute seule.&nbsp;»</td></tr>
+    <tr><td class="t">12–20 s</td><td>Écran filmé&nbsp;: opérateur, type, montant, Valider. Un chronomètre s'arrête à «&nbsp;8 s&nbsp;».</td><td>«&nbsp;Tu fais l'opération sur ton appli habituelle, puis tu l'enregistres ici en quelques secondes.&nbsp;»</td></tr>
+    <tr><td class="t">20–27 s</td><td>Accueil&nbsp;: soldes de chaque opérateur et espèces, commissions du jour.</td><td>«&nbsp;Tes soldes et tes commissions sont calculés automatiquement, pour chaque opérateur.&nbsp;»</td></tr>
+    <tr><td class="t">27–34 s</td><td>Écran de clôture&nbsp;: comptage des billets, «&nbsp;Écart&nbsp;: 0 FCFA&nbsp;». L'agent sourit.</td><td>«&nbsp;Le soir, tu comptes, tu clôtures. Et tu sais exactement où est ton argent.&nbsp;»</td></tr>
+    <tr><td class="t">34–40 s</td><td>L'agent ferme sa boutique, détendu.</td><td>«&nbsp;<b>7 jours gratuits.</b> Lien dans la bio.&nbsp;»</td></tr>
+    <tr><td class="t">Fin</td><td>Logo et adresse du site.</td><td><i>«&nbsp;AfriSaytu ne transfère pas d'argent&nbsp;: vous gardez l'application de votre opérateur.&nbsp;»</i></td></tr>
+  </table>
+  <h3>Conseils de tournage</h3>
+  <ul>
+    <li>Filmez en lumière du jour, avec un vrai agent&nbsp;: l'authenticité compte plus que la qualité de l'image.</li>
+    <li>Ajoutez des <b>sous-titres en gros</b>&nbsp;: la plupart des gens regardent sans le son.</li>
+    <li>Une musique locale entraînante, à faible volume sous la voix.</li>
+    <li>Les 3 premières secondes décident de tout&nbsp;: commencez directement par le problème.</li>
+    <li>Les chiffres montrés à l'écran sont des exemples&nbsp;: écrivez «&nbsp;Exemple&nbsp;» dans un coin.</li>
+  </ul>
+</div>
+
+<!-- 3 -->
+<div class="section">
+  <h2>3. Facebook</h2>
+  <p class="muted">Publication longue, avec la vidéo ou une image. Adaptée aussi aux groupes d'agents et de commerçants.</p>
+  <div class="post">
+    <span class="label">À copier</span>
+    <p>💰 <b>Agents Wave, Orange Money et Mixx by Yas&nbsp;: fini les soirées à chercher l'écart dans la caisse&nbsp;!</b></p>
+    <p>Vous connaissez ce moment&nbsp;: la journée est finie, vous recomptez… et il manque de l'argent. Mais où&nbsp;? Quelle opération&nbsp;? Quel opérateur&nbsp;?</p>
+    <p><b>AfriSaytu</b> est l'application qui tient votre caisse à votre place&nbsp;:</p>
+    <p>✅ Enregistrez une opération en <b>moins de 10 secondes</b><br />
+       ✅ Vos <b>soldes UV et espèces</b> calculés automatiquement, pour chaque opérateur<br />
+       ✅ Vos <b>commissions</b> suivies chaque jour, pour savoir ce que vous gagnez vraiment<br />
+       ✅ <b>Clôture du soir</b> avec comptage des billets&nbsp;: l'écart s'affiche tout de suite<br />
+       ✅ Une erreur&nbsp;? On la <b>corrige</b>, et tout reste tracé<br />
+       ✅ Pour les propriétaires&nbsp;: suivez <b>tous vos points de vente et vos agents</b>, même à distance</p>
+    <p>📱 Ça marche sur n'importe quel téléphone Android ou iPhone, rien à télécharger sur le Play Store.</p>
+    <p>🎁 <b>Essai gratuit de 7 jours</b>, puis à partir de <b>5 000 FCFA par mois</b>.</p>
+    <p>👉 Essayez maintenant&nbsp;: <b>https://afri-saytu.vercel.app</b></p>
+    <p>ℹ️ AfriSaytu ne transfère pas d'argent et ne touche jamais à vos fonds&nbsp;: vous continuez d'utiliser l'application de votre opérateur, et AfriSaytu vous aide à tout suivre.</p>
+    <p class="tags">#Sénégal #TransfertDArgent #MobileMoney #Wave #OrangeMoney #Dakar #Commerce</p>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="section">
+  <h2>4. Instagram</h2>
+  <h3>Légende courte (sous la vidéo ou le carrousel)</h3>
+  <div class="post keep">
+    <span class="label">À copier</span>
+    <p>Chaque soir, une caisse juste. ✅</p>
+    <p>Opérations enregistrées en quelques secondes, soldes et commissions calculés tout seuls, clôture sans stress.</p>
+    <p>🎁 7 jours gratuits, lien en bio.</p>
+    <p class="tags">#AfriSaytu #MobileMoney #Sénégal #Dakar #AgentWave #OrangeMoney #Entrepreneur #PetitCommerce</p>
+  </div>
+  <h3>Idée de carrousel (5 visuels)</h3>
+  <div class="slides keep">
+    <div class="slide"><span class="n">1</span>Il te manque de l'argent dans la caisse&nbsp;?</div>
+    <div class="slide"><span class="n">2</span>Saisis tes opérations en 10 secondes</div>
+    <div class="slide"><span class="n">3</span>Tes soldes et commissions, calculés automatiquement</div>
+    <div class="slide"><span class="n">4</span>Clôture du soir&nbsp;: écart = 0</div>
+    <div class="slide"><span class="n">5</span>7 jours gratuits, lien en bio</div>
+  </div>
+  <p class="muted">Pensez à mettre le lien du site dans la bio du compte&nbsp;: Instagram ne rend pas les liens cliquables dans les légendes.</p>
+</div>
+
+<!-- 5 -->
+<div class="section">
+  <h2>5. WhatsApp</h2>
+  <h3>Statut (court)</h3>
+  <div class="post keep">
+    <span class="label">À copier</span>
+    <p>📲 Agents Wave / Orange Money / Mixx&nbsp;: tenez votre caisse sans cahier ni calculatrice. 7 jours gratuits 👉 https://afri-saytu.vercel.app</p>
+  </div>
+  <h3>Message à envoyer à vos contacts et groupes d'agents</h3>
+  <div class="post keep">
+    <span class="label">À copier</span>
+    <p>Salam&nbsp;! 👋<br />
+       Je vous présente <b>AfriSaytu</b>, une application pour les agents de transfert d'argent.<br />
+       Vous enregistrez vos opérations, et elle calcule vos soldes, vos commissions et vous aide à clôturer la journée sans écart.<br />
+       Essai <b>gratuit 7 jours</b>, ensuite dès <b>5 000 F / mois</b>.<br />
+       👉 https://afri-saytu.vercel.app<br />
+       Le guide d'utilisation est téléchargeable sur la page d'accueil. N'hésitez pas à me poser vos questions&nbsp;!</p>
+  </div>
+  <p class="muted">Envoyez ce message une seule fois par contact ou par groupe&nbsp;: les envois répétés sont vus comme du spam et peuvent faire bloquer votre numéro.</p>
+</div>
+
+<!-- 6 -->
+<div class="section">
+  <h2>6. LinkedIn</h2>
+  <p class="muted">Ton professionnel, pour les propriétaires de plusieurs points de vente, les distributeurs et les partenaires.</p>
+  <div class="post">
+    <span class="label">À copier</span>
+    <p><b>Gérer plusieurs points de transfert d'argent sans perdre le contrôle de sa trésorerie.</b></p>
+    <p>Au Sénégal, des milliers de points de vente traitent chaque jour des millions de francs sur Wave, Orange Money et Mixx by Yas, souvent avec un simple cahier. Résultat&nbsp;: des écarts de caisse difficiles à expliquer, des commissions mal suivies, et un propriétaire qui ne voit rien à distance.</p>
+    <p>Nous avons créé <b>AfriSaytu</b> pour y répondre&nbsp;:</p>
+    <p>• saisie rapide des opérations par les agents ;<br />
+       • soldes par opérateur et caisse espèces en temps réel ;<br />
+       • suivi des commissions et rapprochement avec les versements des opérateurs ;<br />
+       • clôture quotidienne avec justification des écarts ;<br />
+       • supervision de plusieurs points de vente, rôles (propriétaire, gérant, agent) et journal des actions sensibles ;<br />
+       • export Excel pour la comptabilité.</p>
+    <p>AfriSaytu est un outil de gestion&nbsp;: il ne détient aucun fonds et n'exécute aucun transfert.</p>
+    <p>Formule Business&nbsp;: jusqu'à 5 points de vente, utilisateurs illimités, <b>10 000 FCFA / mois</b>. Essai gratuit de 7 jours.</p>
+    <p>👉 https://afri-saytu.vercel.app</p>
+    <p class="tags">#Fintech #Sénégal #MobileMoney #PME #Gestion</p>
+  </div>
+</div>
+
+<!-- 7 + 8 -->
+<div class="section">
+  <h2>7. Les prix, pour répondre en commentaire</h2>
+  <table class="keep">
+    <tr><th>Formule</th><th>Prix / mois</th><th>Pour qui</th></tr>
+    <tr><td><b>Basic</b></td><td>5 000 FCFA</td><td>1 point de vente, 1 utilisateur, 3 mois d'historique</td></tr>
+    <tr><td><b>Pro</b></td><td>7 000 FCFA</td><td>1 point de vente, jusqu'à 5 utilisateurs, export Excel, 24 mois d'historique</td></tr>
+    <tr><td><b>Business</b></td><td>10 000 FCFA</td><td>Jusqu'à 5 points de vente, utilisateurs illimités, historique illimité</td></tr>
+  </table>
+  <p>Paiement à l'année&nbsp;: <b>2 mois offerts</b>. Essai gratuit de <b>7 jours</b> pour tout nouveau compte.</p>
+
+  <h3>Réponses types</h3>
+  <table class="keep">
+    <tr><th>Question fréquente</th><th>Réponse</th></tr>
+    <tr><td>«&nbsp;C'est une nouvelle appli de transfert&nbsp;?&nbsp;»</td><td>Non&nbsp;: AfriSaytu ne transfère pas d'argent. Vous faites vos opérations sur l'appli de votre opérateur, et AfriSaytu vous aide à suivre votre caisse.</td></tr>
+    <tr><td>«&nbsp;Il faut le télécharger où&nbsp;?&nbsp;»</td><td>Nulle part&nbsp;: ouvrez le site sur votre téléphone, puis «&nbsp;Installer&nbsp;» ou «&nbsp;Ajouter à l'écran d'accueil&nbsp;».</td></tr>
+    <tr><td>«&nbsp;Comment on paie&nbsp;?&nbsp;»</td><td>Avec Wave, depuis l'écran «&nbsp;Mon abonnement&nbsp;» de l'application.</td></tr>
+    <tr><td>«&nbsp;Mes agents peuvent l'utiliser&nbsp;?&nbsp;»</td><td>Oui, avec la formule Pro (jusqu'à 5 utilisateurs) ou Business (illimité). Chacun a son propre accès.</td></tr>
+  </table>
+
+  <h2 style="margin-top:8mm">8. Précautions avant de publier</h2>
+  <div class="warn keep">
+    <span class="box-title">1. Les marques des opérateurs</span>
+    Citer Wave, Orange Money ou Mixx by Yas pour dire que l'application les prend en charge, c'est acceptable. En revanche, n'utilisez pas leurs logos dans vos visuels et ne laissez pas croire à un partenariat officiel sans leur accord écrit.
+  </div>
+  <div class="warn keep">
+    <span class="box-title">2. L'adresse du site</span>
+    afri-saytu.vercel.app fonctionne, mais un nom de domaine à vous (par exemple afrisaytu.com ou afrisaytu.sn) inspire plus confiance. Pensez-y avant une grande campagne.
+  </div>
+  <div class="warn keep">
+    <span class="box-title">3. Avant de partager le lien</span>
+    Vérifiez que l'inscription et le paiement Wave fonctionnent sur le site en ligne&nbsp;: un nouveau client qui bloque dès le premier jour ne revient pas.
+  </div>
+</div>
+
+</body>
+</html>
