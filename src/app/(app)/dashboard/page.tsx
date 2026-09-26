@@ -128,14 +128,15 @@ export default async function DashboardPage() {
             <div className="flex gap-2">
               <Link
                 href="/operations/new"
-                className="flex h-14 flex-[2] items-center justify-center gap-2 rounded-2xl bg-brand-accent px-6 font-heading text-lg font-extrabold text-brand-accent-foreground shadow-sm transition-transform active:scale-[0.98] lg:h-12 lg:flex-none lg:text-base"
+                className="flex h-14 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand-accent px-3 font-heading text-[15px] font-extrabold whitespace-nowrap text-brand-accent-foreground shadow-sm transition-transform active:scale-[0.98] lg:h-12 lg:flex-none lg:gap-2 lg:px-6 lg:text-base"
               >
-                <Plus className="size-5" aria-hidden /> Nouvelle opération
+                {/* One line on a 360 px phone; "…" rather than overflow on a smaller one. */}
+                <Plus className="size-5 shrink-0" aria-hidden /> <span className="truncate">Nouvelle opération</span>
               </Link>
               {can("closing:validate") && (
                 <Link
                   href="/closing"
-                  className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border bg-card px-5 font-semibold hover:bg-accent lg:h-12 lg:flex-none"
+                  className="flex h-14 shrink-0 items-center justify-center gap-1.5 rounded-2xl border bg-card px-3.5 font-semibold whitespace-nowrap hover:bg-accent lg:h-12 lg:gap-2 lg:px-5"
                 >
                   <Lock className="size-4" aria-hidden /> Clôturer
                 </Link>
@@ -212,7 +213,7 @@ export default async function DashboardPage() {
           />
         )}
 
-        <div className="grid gap-6 xl:grid-cols-3 xl:items-start">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:items-start">
           <div className="xl:col-span-2">
             {today.balances.length > 0 && (
               <BalanceCards today={today} canEnter={canEnter} />
@@ -221,7 +222,7 @@ export default async function DashboardPage() {
           <AlertsPanel alerts={today.alerts} />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] xl:items-start">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] xl:items-start">
           <VolumeBars
             title="Volume des 7 jours"
             subtitle={

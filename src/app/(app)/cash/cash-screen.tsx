@@ -72,8 +72,8 @@ export function CashScreen({ context, branchName, loadedAt }: CashScreenProps) {
             <p className="text-xs font-semibold tracking-wide uppercase opacity-80">Trésorerie du point de vente</p>
             <span className="truncate rounded-md bg-primary-foreground/15 px-2 py-0.5 text-xs font-bold">{branchName}</span>
           </div>
-          <p className="font-heading text-4xl font-extrabold tabular-nums">{formatFCFA(uvTotal + cashTotal)}</p>
-          <div className="grid grid-cols-2 gap-3">
+          <p className="font-heading text-3xl font-extrabold tabular-nums min-[400px]:text-4xl">{formatFCFA(uvTotal + cashTotal)}</p>
+          <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 min-[400px]:gap-3">
             <div className="rounded-xl bg-primary-foreground/10 p-3">
               <p className="flex items-center gap-1.5 text-xs opacity-80"><Smartphone className="size-3.5" aria-hidden /> UV opérateurs</p>
               <p className="font-heading text-lg font-bold tabular-nums">{formatFCFA(uvTotal)}</p>

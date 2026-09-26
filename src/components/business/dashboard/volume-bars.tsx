@@ -20,6 +20,17 @@ type VolumeBarsProps = {
   days: readonly DayVolume[]
 }
 
+// "dim. 20" on two lines ("dim." above "20"): seven days fit a 360 px phone.
+function DayLabel({ label, isToday }: { label: string; isToday: boolean }) {
+  const split = label.lastIndexOf(" ")
+  return (
+    <span className={cn("mt-2 flex h-7 flex-col items-center text-[11px] leading-3.5 whitespace-nowrap", isToday ? "font-bold" : "text-muted-foreground")}>
+      <span>{split > 0 ? label.slice(0, split) : label}</span>
+      {split > 0 && <span>{label.slice(split + 1)}</span>}
+    </span>
+  )
+}
+
 // Daily volume with a scale and guide lines, drawn in CSS (no chart library, light on 3G).
 export function VolumeBars({ title, subtitle, days }: VolumeBarsProps) {
   const total = days.reduce((sum, day) => sum + day.volume, 0)
@@ -40,16 +51,16 @@ export function VolumeBars({ title, subtitle, days }: VolumeBarsProps) {
       </div>
 
       <div className="flex gap-3">
-        <div className="flex h-44 flex-col justify-between pb-6 text-right text-[11px] text-muted-foreground tabular-nums" aria-hidden>
+        <div className="flex h-44 flex-col justify-between pb-9 text-right text-[11px] text-muted-foreground tabular-nums" aria-hidden>
           {guides.map((ratio) => <span key={ratio}>{formatCompactAmount(max * ratio)}</span>)}
         </div>
         <div className="relative flex-1">
-          <div className="pointer-events-none absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between" aria-hidden>
+          <div className="pointer-events-none absolute inset-x-0 top-0 bottom-9 flex flex-col justify-between" aria-hidden>
             {guides.map((ratio) => <span key={ratio} className="border-t border-dashed" />)}
           </div>
-          <ol className="relative flex h-44 items-end gap-2" aria-label="Volume par jour">
+          <ol className="relative flex h-44 items-end gap-1.5 sm:gap-2" aria-label="Volume par jour">
             {days.map((day) => (
-              <li key={day.key} className="flex h-full flex-1 flex-col items-center justify-end">
+              <li key={day.key} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end">
                 <div className="relative w-full flex-1">
                   <span title={`${formatShortDay(day.key)} : ${formatFCFA(day.volume)}`}
                     aria-label={`${formatShortDay(day.key)} : ${formatFCFA(day.volume)}`}
@@ -57,9 +68,8 @@ export function VolumeBars({ title, subtitle, days }: VolumeBarsProps) {
                       day.isToday ? "bg-brand-accent" : "bg-primary/75 hover:bg-primary")}
                     style={{ height: `${day.volume > 0 ? Math.max((day.volume / max) * 100, 2) : 0}%` }} />
                 </div>
-                <span className={cn("mt-2 h-4 text-[11px] whitespace-nowrap", day.isToday ? "font-bold" : "text-muted-foreground")}>
-                  {formatShortDay(day.key)}
-                </span>
+                <DayLabel label={formatShortDay(day.key)} isToday={day.isToday} />
+
               </li>
             ))}
           </ol>
