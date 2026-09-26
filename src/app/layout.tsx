@@ -19,7 +19,8 @@ export const metadata: Metadata = {
   title: "AfriSaytu",
   description:
     "Le logiciel de caisse des agents de transfert d'argent : soldes, commissions, clôture journalière.",
-  icons: { icon: "/logo.png", apple: "/icons/apple-touch-icon.png" },
+  // Tab icon: app/favicon.ico and app/icon.png (square logo, transparent background).
+  icons: { apple: "/icons/apple-touch-icon.png" },
   // Installed on an iPhone: full screen, own name under the icon.
   appleWebApp: { capable: true, title: "AfriSaytu", statusBarStyle: "default" },
 };
