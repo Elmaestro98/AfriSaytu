@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server"
-import { CircleCheck } from "lucide-react"
+import { CircleCheck, Download } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
@@ -90,6 +90,12 @@ function StartButtons() {
       <Button asChild size="lg" variant="outline" className="h-12 border-primary/30 text-base md:border-primary-foreground/40 md:bg-transparent md:text-primary-foreground md:hover:bg-primary-foreground/10">
         <Link href="/sign-in">J&apos;ai déjà un compte</Link>
       </Button>
+      {/* A plain link with "download": the PDF is saved instead of opening a page. */}
+      <a href="/guide-utilisateur-afrisaytu.pdf" download
+        className="flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline md:justify-start md:text-primary-foreground">
+        <Download className="size-4" aria-hidden />
+        Télécharger le guide d&apos;utilisation (PDF)
+      </a>
     </>
   )
 }
