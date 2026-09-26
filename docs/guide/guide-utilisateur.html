@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>AfriSaytu · Guide d'utilisation</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  :root { --primary: #0B5D4B; --accent: #F2A900; --ink: #14181F; --muted: #5B6470; --line: #E3E6E2; --soft: #EEF5F2; --warn: #FFF6DE; --red: #B42318; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; }
+  h1, h2, h3 { font-family: "Segoe UI Semibold", "Segoe UI", Arial, sans-serif; line-height: 1.2; }
+  h2 { font-size: 17pt; color: var(--primary); margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid var(--accent); }
+  h3 { font-size: 12pt; margin: 6mm 0 2mm; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.2mm; }
+  .section { page-break-before: always; }
+  .keep { page-break-inside: avoid; }
+  .muted { color: var(--muted); }
+  b, strong { font-weight: 600; }
+
+  /* Cover */
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover-band { background: var(--primary); color: #fff; border-radius: 6mm; padding: 16mm 14mm; }
+  .cover-logo { width: 34mm; height: 34mm; background: #fff; border-radius: 5mm; display: flex; align-items: center; justify-content: center; }
+  .cover-logo img { height: 28mm; }
+  .cover h1 { font-size: 30pt; margin: 10mm 0 3mm; }
+  .cover .subtitle { font-size: 13pt; opacity: 0.92; margin: 0; }
+  .cover .for { margin-top: 8mm; display: flex; gap: 3mm; flex-wrap: wrap; }
+  .pill { background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.35); border-radius: 10mm; padding: 1.5mm 4mm; font-size: 10pt; }
+  .cover-foot { color: var(--muted); font-size: 9.5pt; }
+
+  /* Boxes */
+  .note, .tip, .warn { border-radius: 3mm; padding: 3mm 4mm; margin: 3mm 0; }
+  .note { background: var(--soft); border-left: 4px solid var(--primary); }
+  .tip { background: #F4F8FF; border-left: 4px solid #3563E9; }
+  .warn { background: var(--warn); border-left: 4px solid var(--accent); }
+  .box-title { font-weight: 600; display: block; margin-bottom: 1mm; }
+
+  /* Steps */
+  ol.steps { list-style: none; padding: 0; counter-reset: step; }
+  ol.steps > li { counter-increment: step; position: relative; padding-left: 10mm; margin-bottom: 2.5mm; }
+  ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 9pt; display: flex; align-items: center; justify-content: center; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.8pt; }
+  th, td { border: 1px solid var(--line); padding: 2mm 2.5mm; text-align: left; vertical-align: top; }
+  th { background: var(--soft); color: var(--primary); font-weight: 600; }
+  td.c, th.c { text-align: center; }
+  .yes { color: var(--primary); font-weight: 700; }
+  .no { color: #9AA1A9; }
+
+  /* Screen labels */
+  .ui { display: inline-block; background: #fff; border: 1px solid var(--line); border-radius: 1.5mm; padding: 0 1.6mm; font-weight: 600; font-size: 9.5pt; white-space: nowrap; }
+  .ui.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .ui.accent { background: var(--accent); color: #1F1600; border-color: var(--accent); }
+
+  /* Table of contents */
+  .toc { columns: 2; column-gap: 8mm; padding: 0; list-style: none; }
+  .toc li { break-inside: avoid; display: flex; gap: 2mm; margin-bottom: 2mm; }
+  .toc .n { color: var(--primary); font-weight: 700; min-width: 7mm; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .card { border: 1px solid var(--line); border-radius: 3mm; padding: 3mm 4mm; }
+  .card h4 { margin: 0 0 1.5mm; font-size: 10.5pt; color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="cover-band">
+    <div class="cover-logo"><img src="../../public/logo.png" alt="AfriSaytu" /></div>
+    <h1>Guide d'utilisation</h1>
+    <p class="subtitle">AfriSaytu, le logiciel de caisse des agents de transfert d'argent&nbsp;:<br />soldes, commissions et clôture de la journée.</p>
+    <div class="for">
+      <span class="pill">Agents</span>
+      <span class="pill">Gérants</span>
+      <span class="pill">Propriétaires</span>
+    </div>
+  </div>
+  <div>
+    <h3 style="margin-top:0">Sommaire</h3>
+    <ul class="toc">
+      <li><span class="n">1</span> Ce que fait AfriSaytu</li>
+      <li><span class="n">2</span> Installer l'application sur le téléphone</li>
+      <li><span class="n">3</span> Qui peut faire quoi (les rôles)</li>
+      <li><span class="n">4</span> L'écran d'accueil</li>
+      <li><span class="n">5</span> Saisir une opération</li>
+      <li><span class="n">6</span> Corriger ou annuler une opération</li>
+      <li><span class="n">7</span> La caisse et les mouvements</li>
+      <li><span class="n">8</span> Clôturer la journée</li>
+      <li><span class="n">9</span> L'historique, la recherche et l'export</li>
+      <li><span class="n">10</span> Les commissions</li>
+      <li><span class="n">11</span> Statistiques et supervision</li>
+      <li><span class="n">12</span> Les réglages</li>
+      <li><span class="n">13</span> L'abonnement</li>
+      <li><span class="n">14</span> Bonnes pratiques et questions fréquentes</li>
+    </ul>
+  </div>
+  <p class="cover-foot">Version septembre 2026. Les écrans peuvent évoluer légèrement ; les principes restent les mêmes.</p>
+</div>
+
+<!-- ============ 1 ============ -->
+<div class="section">
+  <h2>1. Ce que fait AfriSaytu</h2>
+  <p>AfriSaytu vous aide à <b>tenir la caisse</b> de votre point de vente de transfert d'argent (Wave, Orange Money, Mixx by Yas…)&nbsp;: suivre vos soldes, calculer vos commissions, clôturer la journée et analyser votre activité.</p>
+
+  <div class="note">
+    <span class="box-title">Important&nbsp;: AfriSaytu ne transfère pas d'argent</span>
+    Vous faites toujours l'opération sur l'application ou le terminal officiel de l'opérateur (Wave, Orange Money…). <b>Ensuite</b>, vous l'enregistrez dans AfriSaytu. AfriSaytu ne détient aucun fonds et ne se connecte jamais à votre compte opérateur.
+  </div>
+
+  <h3>Ce que vous suivez dans AfriSaytu</h3>
+  <ul>
+    <li><b>Les soldes UV</b>&nbsp;: les unités électroniques de chaque opérateur (votre «&nbsp;solde Wave&nbsp;», «&nbsp;solde Orange Money&nbsp;»…).</li>
+    <li><b>La caisse espèces</b>&nbsp;: l'argent liquide du point de vente.</li>
+    <li><b>Les commissions</b>&nbsp;: ce que vous gagnez, par opération ou sur le total de la journée selon l'opérateur.</li>
+    <li><b>Les opérations clients</b>&nbsp;: dépôts, retraits, envois, achats de crédit, paiements de factures.</li>
+  </ul>
+
+  <h3>Comment l'argent bouge</h3>
+  <p>Quand vous enregistrez une opération, AfriSaytu met à jour les soldes automatiquement&nbsp;:</p>
+  <table class="keep">
+    <tr><th>Opération</th><th>Solde de l'opérateur (UV)</th><th>Caisse espèces</th></tr>
+    <tr><td><b>Dépôt</b> (le client vous donne des espèces)</td><td>diminue</td><td>augmente</td></tr>
+    <tr><td><b>Retrait</b> (vous donnez des espèces au client)</td><td>augmente</td><td>diminue</td></tr>
+    <tr><td><b>Envoi</b></td><td>diminue</td><td>augmente (+ frais du client)</td></tr>
+    <tr><td><b>Crédit</b> (achat de crédit téléphonique)</td><td>diminue</td><td>augmente</td></tr>
+    <tr><td><b>Facture</b></td><td>diminue</td><td>augmente (+ frais éventuels)</td></tr>
+  </table>
+  <p class="muted">Les soldes affichés sont des <b>soldes théoriques</b>&nbsp;: ils sont calculés à partir des opérations enregistrées. Le solde réel est vérifié à la clôture (section 8).</p>
+</div>
+
+<!-- ============ 2 ============ -->
+<div class="section">
+  <h2>2. Installer l'application sur le téléphone</h2>
+  <p>AfriSaytu s'installe comme une application, <b>sans passer par le Play Store</b>&nbsp;: une icône sur l'écran d'accueil, en plein écran, qui s'ouvre plus vite.</p>
+
+  <div class="two">
+    <div class="card keep">
+      <h4>Sur Android (Chrome)</h4>
+      <ol class="steps">
+        <li>Ouvrez l'adresse d'AfriSaytu dans <b>Chrome</b> et connectez-vous.</li>
+        <li>Sur l'accueil, touchez <span class="ui primary">Installer</span> dans la carte «&nbsp;Installer AfriSaytu sur ce téléphone&nbsp;».</li>
+        <li>Si la carte n'apparaît pas&nbsp;: menu <b>⋮</b> de Chrome, puis <b>«&nbsp;Installer l'application&nbsp;»</b> ou <b>«&nbsp;Ajouter à l'écran d'accueil&nbsp;»</b>.</li>
+      </ol>
+    </div>
+    <div class="card keep">
+      <h4>Sur iPhone (Safari)</h4>
+      <ol class="steps">
+        <li>Ouvrez l'adresse d'AfriSaytu dans <b>Safari</b>.</li>
+        <li>Touchez le bouton <b>Partager</b> (le carré avec une flèche vers le haut).</li>
+        <li>Choisissez <b>«&nbsp;Sur l'écran d'accueil&nbsp;»</b>, puis <b>Ajouter</b>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tip">
+    <span class="box-title">Astuce</span>
+    Un appui long sur l'icône AfriSaytu propose des raccourcis&nbsp;: <b>Nouvelle opération</b> et <b>Caisse</b>.
+  </div>
+  <div class="warn">
+    <span class="box-title">Sans connexion internet</span>
+    AfriSaytu a besoin d'internet pour enregistrer les opérations. Sans réseau, un écran <b>«&nbsp;Pas de connexion&nbsp;»</b> s'affiche&nbsp;: rien n'est perdu, tout ce qui a été validé est déjà enregistré. Touchez <span class="ui primary">Réessayer</span> quand le réseau revient.
+  </div>
+
+  <h3>Se connecter</h3>
+  <ul>
+    <li><b>Propriétaire</b>&nbsp;: vous créez votre compte avec <span class="ui">Créer un compte</span>, puis un assistant vous guide pour configurer votre entreprise (point de vente, opérateurs, soldes de départ).</li>
+    <li><b>Gérant ou agent</b>&nbsp;: vous recevez une <b>invitation par e-mail</b>. Suivez le lien pour créer votre accès ; vous êtes automatiquement rattaché au bon point de vente.</li>
+  </ul>
+</div>
+
+<!-- ============ 3 ============ -->
+<div class="section">
+  <h2>3. Qui peut faire quoi (les rôles)</h2>
+  <p>Chaque personne a un rôle. Les écrans et les boutons s'adaptent à ce rôle, et le serveur vérifie toujours les droits.</p>
+  <table class="keep">
+    <tr><th>Action</th><th class="c">Propriétaire</th><th class="c">Gérant</th><th class="c">Agent</th></tr>
+    <tr><td>Saisir une opération</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c yes">Oui</td></tr>
+    <tr><td>Corriger / annuler une opération</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c">Les siennes, <b>15 min</b></td></tr>
+    <tr><td>Voir les opérations</td><td class="c">Toutes</td><td class="c">Ses points de vente</td><td class="c">Les siennes</td></tr>
+    <tr><td>Mouvements de caisse</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c yes">Oui</td></tr>
+    <tr><td>Valider la clôture</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c">Son point de vente</td></tr>
+    <tr><td>Rouvrir une clôture</td><td class="c yes">Oui</td><td class="c">Avec motif</td><td class="c no">Non</td></tr>
+    <tr><td>Statistiques</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c">Les siennes</td></tr>
+    <tr><td>Supervision, grand livre, rapprochement</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c no">Non</td></tr>
+    <tr><td>Règles de commission</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c no">Non</td></tr>
+    <tr><td>Points de vente, opérateurs</td><td class="c yes">Oui</td><td class="c">Ses points de vente</td><td class="c no">Non</td></tr>
+    <tr><td>Inviter / désactiver des membres</td><td class="c yes">Oui</td><td class="c">Des agents</td><td class="c no">Non</td></tr>
+    <tr><td>Changer le rôle d'un membre</td><td class="c yes">Oui</td><td class="c no">Non</td><td class="c no">Non</td></tr>
+    <tr><td>Exporter (Excel, CSV)</td><td class="c yes">Oui</td><td class="c yes">Oui</td><td class="c">Les siennes</td></tr>
+    <tr><td>Journal d'audit</td><td class="c yes">Oui</td><td class="c">Ses points de vente</td><td class="c no">Non</td></tr>
+    <tr><td>Abonnement et paiement</td><td class="c yes">Oui</td><td class="c no">Non</td><td class="c no">Non</td></tr>
+  </table>
+  <div class="note">
+    <span class="box-title">Confidentialité des clients</span>
+    Les numéros de téléphone des clients sont des données personnelles. Pour les agents, ils s'affichent en partie masqués (ex. <b>77 *** ** 34</b>). Le numéro client reste <b>facultatif</b> à la saisie.
+  </div>
+</div>
+
+<!-- ============ 4 ============ -->
+<div class="section">
+  <h2>4. L'écran d'accueil</h2>
+  <p>L'accueil résume votre journée en un coup d'œil.</p>
+  <ul>
+    <li><b>Les chiffres du jour</b>&nbsp;: volume traité, commissions, nombre d'opérations (dépôts et retraits), trésorerie (UV + espèces).</li>
+    <li><b>Commissions du jour</b> (opérateurs payés sur le total de la journée, comme Wave)&nbsp;: une carte par opérateur avec le palier atteint (ex. <b>Palier 8 / 12</b>), la commission, le volume du jour, une jauge et l'objectif&nbsp;: <i>«&nbsp;Encore 500 000 F pour passer à 7 100 F&nbsp;»</i>.</li>
+    <li><b>Soldes des comptes</b>&nbsp;: chaque compte avec son logo, son solde, une jauge par rapport au seuil d'alerte, et l'étiquette <span class="ui accent">Solde bas</span> si le solde passe sous le seuil.</li>
+    <li><b>À surveiller</b>&nbsp;: les alertes (caisse sous le seuil, écart de clôture, opérations sans règle de commission, journée restée ouverte trop longtemps…).</li>
+    <li><b>Volume des 7 jours</b> et <b>dernières opérations</b>.</li>
+  </ul>
+  <p>Les boutons <span class="ui accent">+ Nouvelle opération</span> et <span class="ui">Clôturer</span> sont toujours à portée de main.</p>
+
+  <h3>La navigation</h3>
+  <div class="two">
+    <div class="card keep">
+      <h4>Sur téléphone</h4>
+      <p>La barre en bas&nbsp;: <b>Accueil</b>, <b>Historique</b>, le gros bouton <b>+</b> (saisir), <b>Caisse</b>, <b>Clôture</b>. Statistiques, Supervision et Réglages sont accessibles depuis l'accueil.</p>
+    </div>
+    <div class="card keep">
+      <h4>Sur ordinateur</h4>
+      <p>Le menu à gauche&nbsp;: Accueil, Historique, Caisse, Clôture, Statistiques, Supervision, Réglages, et le bouton <span class="ui accent">+ Nouvelle opération</span>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 5 ============ -->
+<div class="section">
+  <h2>5. Saisir une opération</h2>
+  <p>C'est l'écran le plus utilisé&nbsp;: il est pensé pour enregistrer une opération en <b>moins de 10 secondes</b>, d'une seule main.</p>
+  <ol class="steps">
+    <li>Faites l'opération sur l'application ou le terminal de l'opérateur, comme d'habitude.</li>
+    <li>Touchez <span class="ui accent">+</span> (téléphone) ou <span class="ui accent">+ Nouvelle opération</span> (ordinateur).</li>
+    <li><b>Choisissez l'opérateur</b> (Wave, Orange Money…). Le dernier utilisé est déjà sélectionné.</li>
+    <li><b>Choisissez le type</b>&nbsp;: Dépôt, Retrait, Envoi, Crédit, Facture ou Autre. Le dernier utilisé est déjà sélectionné.</li>
+    <li><b>Tapez le montant</b> sur le clavier, ou touchez un montant rapide (5 000, 10 000, 25 000, 50 000).</li>
+    <li><i>Facultatif</i>&nbsp;: ouvrez <b>«&nbsp;Client, référence et frais&nbsp;»</b> pour ajouter le numéro du client, la référence de l'opérateur, une note ou corriger les frais.</li>
+    <li>Vérifiez le résumé (commission estimée, nouveaux soldes), puis <b>validez</b>.</li>
+  </ol>
+
+  <div class="tip">
+    <span class="box-title">Le résumé avant de valider</span>
+    Il affiche la <b>commission estimée</b> et les soldes après l'opération. Pour un opérateur payé sur le total de la journée (comme Wave), il indique <b>«&nbsp;Comptée dans la commission du jour&nbsp;»</b>.
+  </div>
+  <div class="warn">
+    <span class="box-title">Doublon possible</span>
+    Si une opération identique (même opérateur, type, montant et numéro client) a été enregistrée dans les <b>3 dernières minutes</b>, AfriSaytu vous demande de confirmer. Vérifiez que vous ne l'enregistrez pas deux fois.
+  </div>
+  <div class="warn">
+    <span class="box-title">Solde négatif</span>
+    Si l'opération rend un solde négatif, un avertissement s'affiche&nbsp;: c'est souvent le signe qu'il faut <b>approvisionner</b> le compte ou vérifier une saisie.
+  </div>
+  <p class="muted">Si le réseau coupe au moment de valider, vous pouvez réessayer sans risque&nbsp;: AfriSaytu reconnaît une opération déjà reçue et ne la crée pas deux fois.</p>
+</div>
+
+<!-- ============ 6 ============ -->
+<div class="section">
+  <h2>6. Corriger ou annuler une opération</h2>
+  <p>Une opération validée <b>n'est jamais modifiée ni supprimée</b>&nbsp;: c'est ce qui garantit un historique fiable. Une erreur se corrige en deux temps, qu'AfriSaytu réunit en un seul geste.</p>
+
+  <h3>Corriger (le plus courant)</h3>
+  <ol class="steps">
+    <li>Ouvrez l'<b>Historique</b> et trouvez l'opération fausse.</li>
+    <li>Touchez le <b>crayon</b> ✏️ (sur ordinateur) ou <span class="ui">Corriger</span> (sur téléphone).</li>
+    <li>Indiquez <b>ce qui est faux</b> (ex. «&nbsp;mauvais montant&nbsp;»), puis <span class="ui primary">Annuler et corriger</span>.</li>
+    <li>L'écran de saisie s'ouvre <b>pré-rempli</b> avec la même opération. Corrigez seulement ce qui est faux, puis validez.</li>
+  </ol>
+
+  <h3>Annuler sans ressaisir</h3>
+  <p>Touchez la <b>croix rouge</b> ✖ (ordinateur) ou <span class="ui">Annuler l'opération</span> (téléphone), indiquez le motif et confirmez.</p>
+
+  <h3>Ce qui se passe</h3>
+  <ul>
+    <li>L'opération annulée <b>reste visible, barrée</b>, avec son motif.</li>
+    <li>Ses effets sur les soldes sont <b>remis à zéro</b> par des lignes inverses (visibles en rouge dans le grand livre).</li>
+    <li>L'annulation est <b>inscrite dans le journal d'audit</b> (qui, quand, pourquoi).</li>
+  </ul>
+
+  <table class="keep">
+    <tr><th>Qui</th><th>Peut corriger ou annuler</th></tr>
+    <tr><td>Agent</td><td>Seulement <b>ses propres</b> opérations, dans les <b>15 minutes</b>. Au-delà, il demande au gérant.</td></tr>
+    <tr><td>Gérant, propriétaire</td><td>À tout moment, dans leurs points de vente.</td></tr>
+    <tr><td>Journée déjà clôturée</td><td>Le gérant doit d'abord <b>rouvrir la clôture</b> (avec un motif), puis corriger, puis reclôturer.</td></tr>
+  </table>
+</div>
+
+<!-- ============ 7 ============ -->
+<div class="section">
+  <h2>7. La caisse et les mouvements</h2>
+  <p>L'écran <b>Caisse</b> montre chaque compte du point de vente (un compte UV par opérateur et la caisse espèces), avec son solde et son seuil d'alerte, ainsi que la trésorerie totale.</p>
+
+  <h3>Les mouvements sans client</h3>
+  <p>Tout ce qui fait bouger l'argent <b>sans client</b> s'enregistre ici, avec <span class="ui primary">Approvisionner</span> sur un compte ou <span class="ui">Autre mouvement</span>&nbsp;:</p>
+  <table class="keep">
+    <tr><th>Mouvement</th><th>Quand l'utiliser</th></tr>
+    <tr><td><b>Approvisionnement UV</b></td><td>Vous achetez des unités électroniques auprès d'un distributeur (payées avec les espèces de la caisse ou non).</td></tr>
+    <tr><td><b>Vente d'UV</b></td><td>Dégagement&nbsp;: vous revendez des unités électroniques.</td></tr>
+    <tr><td><b>Apport en caisse</b></td><td>Fond de caisse apporté par le gérant.</td></tr>
+    <tr><td><b>Retrait de caisse</b></td><td>Versement au gérant, dépôt en banque ou dépense.</td></tr>
+    <tr><td><b>Transfert entre opérateurs</b></td><td>Des unités passent d'un opérateur à un autre.</td></tr>
+    <tr><td><b>Versement de commissions</b></td><td>La commission <b>réellement reçue</b> de l'opérateur, avec le mois qu'elle couvre (voir section 10).</td></tr>
+  </table>
+
+  <h3>Le grand livre d'un compte</h3>
+  <p class="muted">Gérants et propriétaires.</p>
+  <p>Touchez l'icône <b>livre</b> d'un compte pour voir toutes ses lignes&nbsp;: solde actuel, entrées, sorties, lignes groupées par jour avec le solde en fin de journée, et les annulations en rouge avec leur motif. Choisissez la période&nbsp;: Aujourd'hui, 7 jours, 30 jours ou Tout.</p>
+  <div class="note">
+    Le solde d'un compte est <b>exactement la somme de ses lignes</b>. On ne modifie jamais un solde à la main&nbsp;: il bouge uniquement avec les opérations, les mouvements et les clôtures.
+  </div>
+</div>
+
+<!-- ============ 8 ============ -->
+<div class="section">
+  <h2>8. Clôturer la journée</h2>
+  <p>La clôture compare ce que vous avez <b>réellement</b> (compté) avec ce qu'AfriSaytu a <b>calculé</b>, puis verrouille la journée.</p>
+  <ol class="steps">
+    <li>Ouvrez <b>Clôture</b>. Le récapitulatif de la période s'affiche&nbsp;: volume et commissions par opérateur.</li>
+    <li>Pour chaque compte UV, saisissez le <b>solde réel</b> lu sur l'application de l'opérateur.</li>
+    <li>Pour la caisse espèces, <b>comptez les billets et les pièces</b>&nbsp;: l'écran aide au comptage, coupure par coupure.</li>
+    <li>AfriSaytu calcule l'<b>écart</b> pour chaque compte&nbsp;: <i>écart = solde constaté − solde théorique</i>.</li>
+    <li>Si un écart dépasse le seuil fixé par l'entreprise, une <b>justification</b> est obligatoire.</li>
+    <li><b>Validez</b> la clôture.</li>
+  </ol>
+
+  <h3>Après la validation</h3>
+  <ul>
+    <li>La journée est <b>verrouillée</b>&nbsp;: ses opérations ne peuvent plus être annulées.</li>
+    <li>Chaque écart devient une <b>ligne d'ajustement</b>, et le solde constaté devient le <b>solde de départ</b> de la période suivante.</li>
+    <li>La clôture apparaît dans l'historique des clôtures et dans le journal d'audit.</li>
+  </ul>
+  <div class="warn">
+    <span class="box-title">Rouvrir une clôture</span>
+    Seuls le gérant et le propriétaire peuvent rouvrir la dernière clôture, <b>avec un motif</b>. Les ajustements sont annulés, la réouverture est tracée dans le journal d'audit, puis il faut reclôturer.
+  </div>
+</div>
+
+<!-- ============ 9 ============ -->
+<div class="section">
+  <h2>9. L'historique, la recherche et l'export</h2>
+  <p>L'<b>Historique</b> liste les opérations, avec le volume et les commissions de la sélection en haut de l'écran.</p>
+
+  <h3>Rechercher et filtrer</h3>
+  <ul>
+    <li>La <b>barre de recherche</b> trouve une opération par <b>numéro client</b> (même partiel), <b>référence</b> ou <b>montant exact</b>.</li>
+    <li><b>Période</b>&nbsp;: Aujourd'hui, Hier, 7 derniers jours, 30 derniers jours, Toute la période, ou <b>Période personnalisée…</b> (choisissez «&nbsp;Du&nbsp;» et «&nbsp;Au&nbsp;», puis <span class="ui primary">Appliquer</span>).</li>
+    <li><b>Opérateur</b>, <b>Type</b>, <b>Statut</b> (validées / annulées), <b>Point de vente</b> et <b>Agent</b>.</li>
+    <li><span class="ui">Tout effacer</span> remet les filtres à zéro.</li>
+  </ul>
+
+  <h3>Exporter vers Excel ou CSV</h3>
+  <ol class="steps">
+    <li>Réglez les filtres, par exemple&nbsp;: <b>Période personnalisée</b> du 1<sup>er</sup> au 15 septembre, et l'opérateur <b>Wave</b>.</li>
+    <li>Touchez <span class="ui">Excel</span> ou <span class="ui">CSV</span>.</li>
+    <li>Le fichier contient <b>exactement</b> les opérations affichées. Son nom le rappelle, ex. <i>afrisaytu-wave-2026-09-01-au-2026-09-15.xlsx</i>.</li>
+  </ol>
+  <div class="note">
+    <span class="box-title">Bon à savoir</span>
+    L'export est inclus dans les formules <b>Pro</b> et <b>Business</b>. Un export couvre au plus un an. Chaque export est inscrit dans le journal d'audit.
+  </div>
+  <p class="muted">La durée d'historique consultable dépend de la formule&nbsp;: 3 mois en Basic, 24 mois en Pro, illimitée en Business. Les opérations plus anciennes ne sont jamais supprimées&nbsp;: elles réapparaissent si vous changez de formule.</p>
+</div>
+
+<!-- ============ 10 ============ -->
+<div class="section">
+  <h2>10. Les commissions</h2>
+  <p>Selon l'opérateur, la commission est calculée de l'une de ces deux façons.</p>
+
+  <div class="two">
+    <div class="card keep">
+      <h4>Par opération</h4>
+      <p>Chaque opération rapporte une commission, selon les <b>règles de commission</b> de l'entreprise (par opérateur, type d'opération et tranche de montant). Elle est enregistrée au moment de la saisie et ne change plus jamais, même si la règle est modifiée ensuite.</p>
+      <p class="muted">Sans règle correspondante, l'opération est signalée «&nbsp;sans règle&nbsp;» et rapporte 0.</p>
+    </div>
+    <div class="card keep">
+      <h4>Sur le volume du jour (ex. Wave)</h4>
+      <p>Une seule commission <b>par jour et par point de vente</b>&nbsp;: on additionne les <b>dépôts et retraits</b> validés de la journée, et ce total tombe dans un <b>palier</b> du barème de l'opérateur.</p>
+      <p class="muted">Exemple&nbsp;: 1 500 000 F de dépôts + retraits dans la journée → palier 1 500 000 – 1 999 995 F → <b>6 650 F</b> de commission du jour.</p>
+    </div>
+  </div>
+
+  <ul>
+    <li>Les barèmes au volume du jour sont fixés par AfriSaytu et visibles dans <b>Réglages → Commissions</b>.</li>
+    <li>Un jour passé est toujours calculé avec le barème <b>de ce jour-là</b>.</li>
+    <li>Les envois, crédits et factures ne comptent pas dans le total du jour.</li>
+    <li>La commission du jour appartient au <b>point de vente</b>&nbsp;: elle n'est pas répartie entre les agents.</li>
+  </ul>
+
+  <h3>Vérifier ce que l'opérateur vous a payé (rapprochement)</h3>
+  <p class="muted">Gérants et propriétaires.</p>
+  <ol class="steps">
+    <li>Quand l'opérateur verse la commission du mois, enregistrez-la&nbsp;: <b>Caisse → Autre mouvement → Versement de commissions</b>. Indiquez le montant, le compte qui l'a reçue et <b>le mois couvert</b> (le mois précédent par défaut).</li>
+    <li>Ouvrez <b>Statistiques → Rapprochement des commissions</b> et choisissez le mois.</li>
+    <li>Pour chaque opérateur&nbsp;: <b>Estimé</b> (calculé par AfriSaytu), <b>Reçu</b> et <b>Écart</b>. En rouge, il manque de l'argent&nbsp;: c'est à vérifier auprès de l'opérateur.</li>
+  </ol>
+</div>
+
+<!-- ============ 11 ============ -->
+<div class="section">
+  <h2>11. Statistiques et supervision</h2>
+  <h3>Statistiques</h3>
+  <p>Choisissez <b>Aujourd'hui</b>, <b>7 derniers jours</b> ou <b>Ce mois</b>&nbsp;:</p>
+  <ul>
+    <li>commissions, volume, nombre d'opérations et commission moyenne, comparés à la période précédente ;</li>
+    <li>un graphique jour par jour (commissions ou volume) ;</li>
+    <li>la répartition par opérateur et par type d'opération, et le classement des agents (gérants et propriétaires).</li>
+  </ul>
+  <p class="muted">Un agent voit les statistiques de ses propres opérations, et les commissions du jour de son point de vente.</p>
+
+  <h3>Supervision</h3>
+  <p class="muted">Gérants et propriétaires.</p>
+  <p>Une vue du réseau&nbsp;: indicateurs clés, volume des 7 jours, alertes, tableau des points de vente (volume, commissions, trésorerie, dernière clôture), répartition par opérateur, performance des agents et dernières clôtures. Un propriétaire avec plusieurs points de vente peut en choisir un.</p>
+</div>
+
+<!-- ============ 12 ============ -->
+<div class="section">
+  <h2>12. Les réglages</h2>
+  <p class="muted">Propriétaires et gérants, selon leurs droits.</p>
+  <table class="keep">
+    <tr><th>Écran</th><th>Ce que vous y faites</th></tr>
+    <tr><td><b>Points de vente</b></td><td>Voir chaque point de vente et ses comptes ; modifier le numéro d'un compte et son <b>seuil d'alerte</b> (crayon) ; ajouter un opérateur à un point de vente ; créer un nouveau point de vente (propriétaire, selon la formule).</td></tr>
+    <tr><td><b>Opérateurs</b></td><td>Choisir les opérateurs que l'entreprise utilise (le catalogue est tenu à jour par AfriSaytu). Un opérateur que vous n'utilisez plus disparaît de la saisie, son historique est conservé.</td></tr>
+    <tr><td><b>Commissions</b></td><td>Créer et modifier les règles de commission par opération (par opérateur, type et tranche) ; consulter les barèmes au volume du jour.</td></tr>
+    <tr><td><b>Équipe</b></td><td>Inviter un membre (e-mail, rôle, points de vente) ; nommer un agent gérant ou l'inverse (propriétaire) ; désactiver un membre (son historique est conservé).</td></tr>
+    <tr><td><b>Journal d'audit</b></td><td>Retrouver les actions sensibles&nbsp;: annulations, clôtures et réouvertures, changements de règles et de rôles, exports, actions du support AfriSaytu.</td></tr>
+    <tr><td><b>Mon abonnement</b></td><td>Statut, formule, échéance, utilisation, paiement (propriétaire, section 13).</td></tr>
+  </table>
+  <div class="tip">
+    <span class="box-title">Conseil&nbsp;: les seuils d'alerte</span>
+    Réglez un seuil sur chaque compte UV et sur la caisse. L'accueil vous préviendra dès qu'un solde passe dessous, avant de devoir refuser un client.
+  </div>
+</div>
+
+<!-- ============ 13 ============ -->
+<div class="section">
+  <h2>13. L'abonnement</h2>
+  <table class="keep">
+    <tr><th>Formule</th><th>Prix / mois</th><th>Points de vente</th><th>Utilisateurs</th><th>Historique</th><th>Export</th></tr>
+    <tr><td><b>Basic</b></td><td>5 000 F</td><td>1</td><td>1</td><td>3 mois</td><td class="no">—</td></tr>
+    <tr><td><b>Pro</b></td><td>7 000 F</td><td>1</td><td>Jusqu'à 5</td><td>24 mois</td><td class="yes">Oui</td></tr>
+    <tr><td><b>Business</b></td><td>10 000 F</td><td>Jusqu'à 5</td><td>Illimité</td><td>Illimité</td><td class="yes">Oui</td></tr>
+  </table>
+  <p class="muted">Paiement annuel&nbsp;: 2 mois offerts.</p>
+
+  <h3>Le cycle de l'abonnement</h3>
+  <ol class="steps">
+    <li><b>Essai gratuit de 7 jours</b>, avec les fonctions de la formule Pro.</li>
+    <li>À l'échéance, <b>7 jours de grâce</b>&nbsp;: tout fonctionne, un bandeau orange vous prévient.</li>
+    <li>Ensuite, <b>lecture seule</b>&nbsp;: vous pouvez consulter et exporter vos données, mais plus rien enregistrer, jusqu'au paiement.</li>
+  </ol>
+
+  <h3>Payer avec Wave (propriétaire)</h3>
+  <ol class="steps">
+    <li><b>Réglages → Mon abonnement</b>. Choisissez la formule (ou <span class="ui">Choisir cette formule</span> sur une carte) et la durée (1, 3, 6 mois ou 1 an).</li>
+    <li>Touchez <span class="ui accent">Payer avec Wave</span> et payez le montant affiché.</li>
+    <li>Revenez dans AfriSaytu, collez la <b>référence de la transaction Wave</b> et touchez <span class="ui primary">J'ai payé</span>.</li>
+    <li>Le paiement est «&nbsp;en attente de confirmation&nbsp;»&nbsp;: l'abonnement est activé dès que l'équipe AfriSaytu a vérifié la réception.</li>
+  </ol>
+</div>
+
+<!-- ============ 14 ============ -->
+<div class="section">
+  <h2>14. Bonnes pratiques et questions fréquentes</h2>
+  <h3>Bonnes pratiques</h3>
+  <ul>
+    <li><b>Enregistrez chaque opération tout de suite</b>, juste après l'avoir faite chez l'opérateur.</li>
+    <li><b>Clôturez chaque jour</b>&nbsp;: c'est le moment où l'on repère un écart pendant qu'on s'en souvient encore.</li>
+    <li><b>Ne partagez jamais votre compte</b>&nbsp;: chaque opération porte le nom de son auteur.</li>
+    <li>Sur un téléphone partagé, <b>déconnectez-vous</b> en fin de service (menu du compte).</li>
+    <li>Une erreur&nbsp;? Utilisez <b>Corriger</b> plutôt que d'enregistrer une opération «&nbsp;inverse&nbsp;».</li>
+  </ul>
+
+  <h3>Questions fréquentes</h3>
+  <table>
+    <tr><th>Problème</th><th>Que faire</th></tr>
+    <tr><td>Je ne vois pas le bouton Corriger ou Annuler.</td><td>L'opération est peut-être déjà annulée, sa journée clôturée, ou (pour un agent) les 15 minutes sont passées. Demandez au gérant.</td></tr>
+    <tr><td>«&nbsp;Sans règle&nbsp;» s'affiche sur une opération.</td><td>Aucune règle de commission ne correspond. Le gérant ou le propriétaire peut en créer une dans Réglages → Commissions. L'opération passée garde une commission de 0.</td></tr>
+    <tr><td>Un solde est négatif.</td><td>Vérifiez les dernières saisies, puis enregistrez l'approvisionnement ou l'apport manquant dans la Caisse.</td></tr>
+    <tr><td>Le bouton Saisir a disparu et un bandeau rouge s'affiche.</td><td>L'abonnement est en lecture seule&nbsp;: le propriétaire doit le renouveler (section 13).</td></tr>
+    <tr><td>«&nbsp;Pas de connexion&nbsp;».</td><td>Vérifiez les données mobiles ou le Wi-Fi, puis touchez Réessayer. Rien de ce qui a été validé n'est perdu.</td></tr>
+    <tr><td>Je ne vois pas l'export.</td><td>L'export est inclus à partir de la formule Pro.</td></tr>
+    <tr><td>L'écart de clôture est important.</td><td>Recomptez la caisse, relisez l'historique du jour (opération oubliée ou en double&nbsp;?), puis justifiez l'écart avant de valider.</td></tr>
+  </table>
+
+  <div class="note">
+    <span class="box-title">Besoin d'aide&nbsp;?</span>
+    Contactez le support AfriSaytu. Les actions faites par le support sur votre compte apparaissent toujours dans votre journal d'audit, signées «&nbsp;Support AfriSaytu&nbsp;».
+  </div>
+</div>
+
+</body>
+</html>
