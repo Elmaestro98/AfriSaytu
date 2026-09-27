@@ -139,6 +139,7 @@ model Organization {
   auditLogs         AuditLog[]
   pushSubscriptions PushSubscription[]
   notificationLogs  NotificationLog[]
+  sharedDevices     SharedDevice[]
 }
 
 // Point de vente: a shop or kiosk with its own cash drawer and operator accounts.
@@ -152,13 +153,14 @@ model Branch {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization       @relation(fields: [organizationId], references: [id])
-  members      MemberBranch[]
-  accounts     Account[]
-  transactions Transaction[]
-  movements    InternalMovement[]
-  closings     DailyClosing[]
-  auditLogs    AuditLog[]
+  organization  Organization       @relation(fields: [organizationId], references: [id])
+  members       MemberBranch[]
+  accounts      Account[]
+  transactions  Transaction[]
+  movements     InternalMovement[]
+  closings      DailyClosing[]
+  auditLogs     AuditLog[]
+  sharedDevices SharedDevice[]
 
   @@index([organizationId])
 }
@@ -183,6 +185,13 @@ model Member {
   closings          DailyClosing[]
   auditLogs         AuditLog[]
   pushSubscriptions PushSubscription[]
+  devicesDeclared   SharedDevice[]
+
+  // Quick switch on a shared phone (agents): the 4-digit code, hashed with a server-side secret
+  // (never stored readable), and the lock after too many wrong codes.
+  pinHash        String?
+  pinFailures    Int       @default(0)
+  pinLockedUntil DateTime?
 
   // Notification kinds this member turned off (e.g. "DAILY_TIER"); everything else is on.
   mutedNotifications String[] @default([])
@@ -583,4 +592,25 @@ model NotificationLog {
   organization Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([organizationId, key])
+}
+
+// A phone declared by the owner or a manager as the shared phone of a branch: agents switch on it
+// with their code. The phone keeps a random secret in a cookie; only its hash is stored here.
+// Withdrawn (revokedAt) rather than deleted, so the audit keeps its history.
+model SharedDevice {
+  id             String    @id @default(cuid())
+  organizationId String
+  branchId       String
+  name           String
+  tokenHash      String    @unique
+  createdById    String
+  createdAt      DateTime  @default(now())
+  lastSeenAt     DateTime?
+  revokedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  branch       Branch       @relation(fields: [branchId], references: [id])
+  createdBy    Member       @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, branchId])
 }

@@ -1,4 +1,4 @@
-import { Bell, CreditCard, Percent, ScrollText, Smartphone, Store, Users } from "lucide-react"
+import { Bell, CreditCard, KeyRound, Percent, ScrollText, Smartphone, Store, TabletSmartphone, Users } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
@@ -34,6 +34,8 @@ export default async function SettingsPage() {
         {team && <SettingsLink href="/settings/team" icon={Users} title="Équipe" description="Invitez vos agents et gérez leurs accès" />}
         {subscription && <SettingsLink href="/settings/subscription" icon={CreditCard} title="Mon abonnement" description="Formule, échéance et utilisation" />}
         {audit && <SettingsLink href="/settings/audit" icon={ScrollText} title="Journal d'audit" description="Annulations, clôtures, règles, exports" />}
+        {team && ctx.actor.role !== "AGENT" && <SettingsLink href="/settings/devices" icon={TabletSmartphone} title="Téléphones partagés" description="Changement rapide d'agent avec un code" />}
+        {ctx.actor.role === "AGENT" && <SettingsLink href="/settings/pin" icon={KeyRound} title="Mon code" description="Pour le téléphone partagé du point de vente" />}
         {/* Everyone, agents included: each member chooses their own notifications. */}
         <SettingsLink href="/settings/notifications" icon={Bell} title="Notifications" description="Soldes bas, paliers, rappel de clôture" />
       </main>

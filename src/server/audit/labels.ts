@@ -54,6 +54,10 @@ function detailOf(action: AuditActionKey, before: Json, after: Json): string | n
       const to = text(after.closesAt)
       return from && to ? `Fermeture ${from} → ${to}` : null
     }
+    case "device.register":
+      return text(after.name)
+    case "device.revoke":
+      return text(before.name)
     case "member.invite": {
       const email = text(after.email)
       const role = text(after.role)
