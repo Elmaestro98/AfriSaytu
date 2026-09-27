@@ -5,8 +5,9 @@ import { Toaster as Sonner, type ToasterProps } from "sonner"
 
 import { DESKTOP_QUERY, useMediaQuery } from "@/lib/use-media-query"
 
-// Success toasts (sonner), in the brand's colours. Phone: at the top, clear of the bottom
-// navigation and of the entry button; desktop: bottom right. Short, large, swipe to close.
+// Success toasts (sonner), in the brand's colours. Phone: just below the page header (never over
+// its back arrow or title: touching a toast keeps it open, so it must not sit on a control), clear
+// of the bottom navigation and the entry button; desktop: bottom right. Short, large, swipe away.
 // Errors stay next to what they are about, never only in a toast.
 export function Toaster(props: ToasterProps) {
   const desktop = useMediaQuery(DESKTOP_QUERY)
@@ -15,7 +16,7 @@ export function Toaster(props: ToasterProps) {
       position={desktop ? "bottom-right" : "top-center"}
       duration={3000}
       visibleToasts={3}
-      mobileOffset={{ top: 12, left: 12, right: 12 }}
+      mobileOffset={{ top: 76, left: 12, right: 12 }} // header: 64 px (h-16) + a gap
       icons={{
         success: <CircleCheck className="size-5 text-primary" />,
         info: <Info className="size-5 text-primary" />,

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
@@ -16,6 +17,7 @@ export function PinForm({ hasPin }: { hasPin: boolean }) {
   const [pin, setPin] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const save = () =>
@@ -25,6 +27,7 @@ export function PinForm({ hasPin }: { hasPin: boolean }) {
       if (!result.ok) return setError(result.error)
       setPin("")
       setConfirm("")
+      setSaved(true)
       toast.success(hasPin ? "Code changé" : "Code créé", { description: "Utilisez-le sur le téléphone partagé de votre point de vente." })
     })
 
@@ -47,6 +50,11 @@ export function PinForm({ hasPin }: { hasPin: boolean }) {
       <Button type="button" className="h-12 font-bold sm:self-start" disabled={isPending || pin.length !== 4 || confirm.length !== 4} onClick={save}>
         Enregistrer mon code
       </Button>
+      {saved && (
+        <Link href="/settings" className="flex h-12 items-center justify-center rounded-lg border font-semibold transition-transform active:scale-[0.98] sm:self-start sm:px-6">
+          Terminé : retour aux réglages
+        </Link>
+      )}
     </section>
   )
 }
