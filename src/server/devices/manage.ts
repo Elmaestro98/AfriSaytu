@@ -5,7 +5,8 @@ import type { ActorContext } from "@/server/auth/actor"
 import { authorize, canManageMember } from "@/server/auth/permissions"
 import { recordAudit, singleBranch } from "@/server/audit/log"
 import { hashPin, pinPepper, pinProblem } from "@/server/devices/pin"
-import { DEVICE_COOKIE, DEVICE_COOKIE_MAX_AGE, hashDeviceToken, isDeviceTokenShape, newDeviceToken } from "@/server/devices/token"
+import { currentDevice } from "@/server/devices/current"
+import { DEVICE_COOKIE, DEVICE_COOKIE_MAX_AGE, hashDeviceToken, newDeviceToken } from "@/server/devices/token"
 import type { ActionResult } from "@/server/result"
 
 // Quick agent switch, step 1: each agent's code, and the phones declared as shared.
@@ -49,21 +50,6 @@ export async function resetMemberPin(ctx: ActorContext, memberId: string): Promi
 // Owner, or a manager of that branch (the owner's choice).
 function canManageDevices(ctx: ActorContext, branchId: string): boolean {
   return ctx.actor.role !== "AGENT" && authorize(ctx.actor, "member:manage", { branchId }).allowed
-}
-
-async function readDeviceToken(): Promise<string | null> {
-  const value = (await cookies()).get(DEVICE_COOKIE)?.value
-  return isDeviceTokenShape(value) ? value : null
-}
-
-// The shared phone this browser is, if any (still declared, in this organization).
-export async function currentDevice(ctx: Pick<ActorContext, "db">) {
-  const token = await readDeviceToken()
-  if (!token) return null
-  return ctx.db.sharedDevice.findFirst({
-    where: { tokenHash: hashDeviceToken(token), revokedAt: null },
-    select: { id: true, branchId: true, name: true, branch: { select: { name: true } } },
-  })
 }
 
 // Makes THIS phone the shared phone of a branch: a new secret in its cookie, its hash stored.

@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
 
 import { BrandMark } from "@/components/business/brand-mark"
+import { carriesDeviceCookie } from "@/server/devices/current"
 
 type AppHeaderProps = {
   title: string
@@ -12,7 +13,9 @@ type AppHeaderProps = {
 
 // Top bar of the signed-in screens. On desktop the logo and the account menu live in the side
 // navigation, so the bar only carries the page title.
-export function AppHeader({ title, subtitle, backHref }: AppHeaderProps) {
+// On a shared phone the account menus are hidden: they would open the signed-in account.
+export async function AppHeader({ title, subtitle, backHref }: AppHeaderProps) {
+  const shared = await carriesDeviceCookie()
   return (
     <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-md items-center gap-3 px-4 lg:mx-0 lg:h-20 lg:max-w-none lg:px-8">
@@ -31,12 +34,14 @@ export function AppHeader({ title, subtitle, backHref }: AppHeaderProps) {
           <p className="truncate font-heading text-lg leading-tight font-bold lg:text-2xl">{title}</p>
           {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
         </div>
-        <div className="flex items-center gap-3 lg:hidden">
-          <div className="hidden sm:block">
-            <OrganizationSwitcher hidePersonal />
+        {!shared && (
+          <div className="flex items-center gap-3 lg:hidden">
+            <div className="hidden sm:block">
+              <OrganizationSwitcher hidePersonal />
+            </div>
+            <UserButton />
           </div>
-          <UserButton />
-        </div>
+        )}
       </div>
     </header>
   )

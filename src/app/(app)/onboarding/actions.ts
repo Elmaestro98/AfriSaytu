@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto"
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server"
 
 import { onboardingSchema } from "@/schemas/onboarding"
+import { carriesDeviceCookie } from "@/server/devices/current"
 import { getBaseClient } from "@/server/db/client"
 import { UnknownOperatorError, buildProvisioningRows } from "@/server/onboarding/build-rows"
 import { provisionOrganization } from "@/server/onboarding/provision"
@@ -22,6 +23,10 @@ export async function completeOnboarding(raw: unknown): Promise<OnboardingResult
   const { userId, orgId, orgRole } = await auth()
   if (!userId) {
     return { ok: false, error: "Session expirée. Reconnectez-vous." }
+  }
+  // A shared phone never creates or configures a company: its account is not the agent's.
+  if (await carriesDeviceCookie()) {
+    return { ok: false, error: "Impossible depuis un téléphone partagé." }
   }
 
   const parsed = onboardingSchema.safeParse(raw)

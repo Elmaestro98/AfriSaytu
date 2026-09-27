@@ -1,5 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 
+import { carriesDeviceCookie } from "@/server/devices/current"
+
 // SaaS admin (F-63): Clerk user ids listed in SAAS_ADMIN_USER_IDS (comma separated). A user id
 // never changes and cannot be chosen by someone else, unlike an e-mail address.
 
@@ -18,5 +20,7 @@ export function isSaasAdmin(userId: string | null | undefined, raw: string | und
 export async function requireSaasAdmin(): Promise<{ userId: string }> {
   const { userId } = await auth()
   if (!userId || !isSaasAdmin(userId, process.env.SAAS_ADMIN_USER_IDS)) throw new AdminAccessError()
+  // Never from a shared phone, even when its signed-in account is an admin: agents use it.
+  if (await carriesDeviceCookie()) throw new AdminAccessError()
   return { userId }
 }

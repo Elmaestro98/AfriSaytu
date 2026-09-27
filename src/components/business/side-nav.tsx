@@ -14,6 +14,7 @@ type SideNavProps = {
   organizationName: string
   memberName: string
   roleLabel: string
+  shared?: boolean // shared phone: no account menu (it would open the signed-in account)
 }
 
 // The section just clicked, while its page loads.
@@ -23,7 +24,7 @@ function PendingDot() {
 }
 
 // Desktop navigation (mockups 01 and 02): brand, main action, sections, account at the bottom.
-export function SideNav({ items, organizationName, memberName, roleLabel }: SideNavProps) {
+export function SideNav({ items, organizationName, memberName, roleLabel, shared = false }: SideNavProps) {
   const pathname = usePathname()
   const sections = items.filter((key) => key !== "entry")
 
@@ -69,9 +70,9 @@ export function SideNav({ items, organizationName, memberName, roleLabel }: Side
       </nav>
 
       <div className="flex flex-col gap-3 border-t p-4">
-        <OrganizationSwitcher hidePersonal />
+        {!shared && <OrganizationSwitcher hidePersonal />}
         <div className="flex items-center gap-3">
-          <UserButton />
+          {!shared && <UserButton />}
           <span className="min-w-0">
             <span className="block truncate text-sm font-semibold">{memberName}</span>
             <span className="block truncate text-xs text-muted-foreground">{roleLabel}</span>

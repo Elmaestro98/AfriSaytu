@@ -1,5 +1,5 @@
 import type { ActorContext } from "@/server/auth/actor"
-import { currentDevice } from "@/server/devices/manage"
+import { currentDevice } from "@/server/devices/current"
 
 // Réglages -> Téléphones partagés (owner, managers): their branches, the shared phones of those
 // branches, whether THIS phone is one, and which agents have a code.
