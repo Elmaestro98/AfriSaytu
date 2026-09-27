@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,7 +22,10 @@ function ReopenForm({ closingId, onClose }: { closingId: string; onClose: () => 
     setError(null)
     startTransition(async () => {
       const result = await reopenClosingAction({ closingId, reason })
-      if (result.ok) onClose()
+      if (result.ok) {
+        toast.success("Clôture rouverte", { description: "Les opérations de la journée peuvent de nouveau être annulées. Pensez à reclôturer." })
+        onClose()
+      }
       else setError(result.error)
     })
   }

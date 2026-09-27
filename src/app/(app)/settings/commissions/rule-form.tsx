@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Controller, FormProvider, useForm } from "react-hook-form"
 
 import { FieldError } from "@/components/business/field-error"
@@ -53,7 +54,10 @@ export function RuleForm({ operators, roundingMode, editing, onDone }: RuleFormP
       const result = editing
         ? await replaceRuleAction({ ruleId: editing.ruleId, rule: values })
         : await createRuleAction(values)
-      if (result.ok) onDone()
+      if (result.ok) {
+        toast.success(editing ? "Règle modifiée" : "Règle créée", { description: "Elle s'applique aux prochaines opérations ; le passé ne change pas." })
+        onDone()
+      }
       else setError(result.error)
     })
   }

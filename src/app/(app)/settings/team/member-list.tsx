@@ -2,6 +2,7 @@
 
 import { MapPin } from "lucide-react"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { roleLabel } from "@/lib/roles"
@@ -117,6 +118,7 @@ export function MemberList({ members }: { members: readonly TeamMemberRow[] }) {
       const result =
         change === "deactivate" ? await deactivateMemberAction({ memberId }) : await changeRoleAction({ memberId, role: change })
       if (!result.ok) setError(result.error)
+      else toast.success(change === "deactivate" ? "Membre désactivé" : "Rôle modifié")
       setConfirming(null)
     })
   }

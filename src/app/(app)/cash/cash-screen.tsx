@@ -1,7 +1,8 @@
 "use client"
 
-import { ArrowLeftRight, Banknote, CircleCheck, RefreshCw, Smartphone } from "lucide-react"
+import { ArrowLeftRight, Banknote, RefreshCw, Smartphone } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { useState, useTransition } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -24,14 +25,12 @@ export function CashScreen({ context, branchName, loadedAt }: CashScreenProps) {
   const router = useRouter()
   const desktop = useMediaQuery(DESKTOP_QUERY)
   const [form, setForm] = useState<FormState>(null)
-  const [feedback, setFeedback] = useState<{ text: string; warning: string | null } | null>(null)
   const [isRefreshing, startRefresh] = useTransition()
 
   const uvTotal = context.accounts.filter((account) => account.kind === "OPERATOR").reduce((sum, account) => sum + account.balance, 0)
   const cashTotal = context.accounts.filter((account) => account.kind === "CASH").reduce((sum, account) => sum + account.balance, 0)
 
   const open = (kind: MovementKindKey, accountId?: string) => {
-    setFeedback(null)
     setForm({ kind, accountId, key: Date.now() }) // a new key = a fresh form and a new idempotency key
   }
 
@@ -88,12 +87,6 @@ export function CashScreen({ context, branchName, loadedAt }: CashScreenProps) {
           </Button>
         </section>
 
-        {feedback && (
-          <div role="status" className="order-2 rounded-xl bg-accent p-3 text-sm font-semibold text-accent-foreground">
-            <p className="flex items-start gap-2"><CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />{feedback.text}</p>
-            {feedback.warning && <p className="mt-1 font-normal">{feedback.warning}</p>}
-          </div>
-        )}
       </div>
 
       <Sheet open={form !== null} onOpenChange={(isOpen) => !isOpen && setForm(null)}>
@@ -106,7 +99,13 @@ export function CashScreen({ context, branchName, loadedAt }: CashScreenProps) {
             <div className="px-4 pb-6">
               <MovementForm key={form.key} branchId={context.branchId} accounts={context.accounts} initialKind={form.kind}
                 initialAccountId={form.accountId} onCancel={() => setForm(null)}
-                onDone={(text, warning) => { setForm(null); setFeedback({ text, warning }); router.refresh() }} />
+                onDone={(text, warning) => {
+                  setForm(null)
+                  // A warning (e.g. a balance now negative) stays longer than a plain success.
+                  if (warning) toast.warning(text, { description: warning, duration: 6000 })
+                  else toast.success(text)
+                  router.refresh()
+                }} />
             </div>
           )}
         </SheetContent>

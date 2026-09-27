@@ -2,6 +2,7 @@
 
 import { Clock, Pencil } from "lucide-react"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +23,10 @@ export function BranchHours({ branchId, closesAt }: { branchId: string; closesAt
     startTransition(async () => {
       setError(null)
       const result = await updateBranchHoursAction({ branchId, closesAt: value })
-      if (result.ok) setEditing(false)
+      if (result.ok) {
+        setEditing(false)
+        toast.success(`Fermeture à ${value}`, { description: "La prévision des soldes en tient compte." })
+      }
       else setError(result.error)
     })
 

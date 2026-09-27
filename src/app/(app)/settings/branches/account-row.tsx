@@ -2,6 +2,7 @@
 
 import { Banknote, Pencil } from "lucide-react"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { AmountInput } from "@/components/business/amount-input"
 import { OperatorBadge } from "@/components/business/operator-badge"
@@ -41,7 +42,10 @@ export function AccountRow({ account }: { account: Account }) {
     setError(null)
     startTransition(async () => {
       const result = await updateAccountAction({ accountId: account.id, accountNumber, alertThreshold: threshold })
-      if (result.ok) setEditing(false)
+      if (result.ok) {
+        setEditing(false)
+        toast.success("Compte mis à jour", { description: account.label })
+      }
       else setError(result.error)
     })
   }

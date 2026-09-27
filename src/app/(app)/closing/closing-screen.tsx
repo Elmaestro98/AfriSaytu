@@ -3,6 +3,7 @@
 import { CircleCheck, Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { AmountInput } from "@/components/business/amount-input"
 import { useOfflineQueue } from "@/components/business/offline/use-offline-queue"
@@ -58,7 +59,10 @@ export function ClosingScreen({ context }: { context: ClosingContext }) {
       })
       setConfirming(false)
       if (result.ok) {
-        setFeedback({ kind: "ok", text: "Clôture validée. La journée est verrouillée et les soldes constatés deviennent les soldes d'ouverture." })
+        toast.success(totalDifference === 0 ? "Journée clôturée · aucun écart" : `Journée clôturée · écart ${totalDifference > 0 ? "+" : ""}${formatFCFA(totalDifference)}`, {
+          description: "La journée est verrouillée ; les soldes constatés deviennent les soldes d'ouverture.",
+        })
+        setFeedback(null)
         setCounted({})
         setCashCount({})
         setJustifications({})

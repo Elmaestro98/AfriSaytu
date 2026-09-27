@@ -4,6 +4,7 @@ import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { Suspense } from "react";
 import { NavigationProgress } from "@/components/business/navigation-progress";
 import { ServiceWorker } from "@/components/business/service-worker";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 // Display face: headings and large amounts. Body face: everything else.
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <NavigationProgress />
           </Suspense>
           {children}
+          <Toaster />
           <ServiceWorker />
         </body>
       </html>

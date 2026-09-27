@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 
@@ -33,6 +34,9 @@ export function NotificationKinds({ kinds }: { kinds: readonly KindRow[] }) {
           else copy.add(kind)
           return copy
         })
+      } else {
+        const label = kinds.find((row) => row.kind === kind)?.label ?? "Notification"
+        toast.success(`Notification « ${label} » ${next ? "désactivée" : "activée"}`)
       }
     })
   }

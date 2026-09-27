@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { FormProvider, useForm } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ export function NewBranchForm({ operators, onDone }: { operators: readonly Activ
     startTransition(async () => {
       const result = await createBranchAction(values)
       if (result.ok) {
+        toast.success("Point de vente créé", { description: values.branchName })
         form.reset(EMPTY)
         onDone()
       } else {

@@ -2,6 +2,7 @@
 
 import { Plus, TriangleAlert } from "lucide-react"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -42,6 +43,7 @@ export function RulesManager({ rules, operators, roundingMode }: RulesManagerPro
     startTransition(async () => {
       const result = await closeRuleAction({ ruleId })
       if (!result.ok) setError(result.error)
+      else toast.success("Règle arrêtée", { description: "Elle ne s'applique plus aux nouvelles opérations." })
       setClosingId(null)
     })
   }

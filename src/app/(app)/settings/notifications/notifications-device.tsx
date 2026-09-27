@@ -2,6 +2,7 @@
 
 import { BellOff, BellRing, Send } from "lucide-react"
 import { useEffect, useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 
@@ -59,8 +60,12 @@ export function NotificationsDevice({ publicKey, devices }: { publicKey: string 
       if (!registration) return setStatus("no-worker")
       const subscription = (await registration.pushManager.getSubscription()) ?? (await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) }))
       const result = await registerDeviceAction({ ...subscription.toJSON(), userAgent: navigator.userAgent.slice(0, 300) })
-      setFeedback(result.ok ? { ok: true, text: result.message ?? "Activées." } : { ok: false, text: result.error })
-      if (result.ok) setStatus("on")
+      if (result.ok) {
+        setStatus("on")
+        toast.success(result.message ?? "Notifications activées sur cet appareil.")
+      } else {
+        setFeedback({ ok: false, text: result.error })
+      }
     })
 
   const disable = () =>
@@ -72,13 +77,14 @@ export function NotificationsDevice({ publicKey, devices }: { publicKey: string 
         await subscription.unsubscribe()
       }
       setStatus("off")
-      setFeedback({ ok: true, text: "Notifications désactivées sur cet appareil." })
+      toast.success("Notifications désactivées sur cet appareil.")
     })
 
   const test = () =>
     startTransition(async () => {
       const result = await sendTestAction()
-      setFeedback(result.ok ? { ok: true, text: `${result.message ?? "Envoyée."} Elle arrive en quelques secondes.` } : { ok: false, text: result.error })
+      if (result.ok) toast.success(result.message ?? "Notification envoyée.", { description: "Elle arrive en quelques secondes." })
+      else setFeedback({ ok: false, text: result.error })
     })
 
   return (

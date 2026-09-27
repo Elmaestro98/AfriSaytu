@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { OperatorBadge } from "@/components/business/operator-badge"
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,7 @@ function SendFeeSwitch({ operatorId, fromUv, onError }: SendFeeSwitchProps) {
     startTransition(async () => {
       const result = await setSendFeeAction({ operatorId, fromUv: !fromUv })
       if (!result.ok) onError(result.error)
+      else toast.success("Réglage enregistré")
     })
   }
 
@@ -131,6 +133,7 @@ export function OperatorList({ operators, canToggle }: OperatorListProps) {
     startTransition(async () => {
       const result = await setOperatorActiveAction({ operatorId, active })
       if (!result.ok) setError(result.error)
+      else toast.success(active ? "Opérateur activé" : "Opérateur retiré de la saisie", { description: active ? undefined : "Son historique est conservé." })
       setConfirmingId(null)
     })
   }

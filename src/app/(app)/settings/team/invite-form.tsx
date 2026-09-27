@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Controller, useForm } from "react-hook-form"
 
 import { FieldError } from "@/components/business/field-error"
@@ -39,7 +40,8 @@ export function InviteForm({ branches, roles }: InviteFormProps) {
     startTransition(async () => {
       const result = await inviteMemberAction(values)
       if (result.ok) {
-        setMessage({ kind: "ok", text: `Invitation envoyée à ${values.email}.` })
+        setMessage(null)
+        toast.success("Invitation envoyée", { description: values.email })
         reset({ ...values, email: "" })
       } else {
         setMessage({ kind: "error", text: result.error })

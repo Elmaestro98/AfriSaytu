@@ -14,6 +14,7 @@ import { applyAmountKey } from "@/lib/amount-keys"
 import { PAGE } from "@/lib/layout"
 import { cn } from "@/lib/utils"
 import { newUuid } from "@/lib/uuid"
+import { vibrate } from "@/lib/vibrate"
 import { DAILY_VOLUME_TYPES } from "@/server/commissions/daily"
 import type { Sign } from "@/server/ledger/effects"
 import type { EntryCorrection } from "@/server/operations/correction"
@@ -112,11 +113,15 @@ export function EntryScreen({ context, branchId, correction = null }: Props) {
       if (!response) {
         const kept = await keepOffline(payload, `${TYPE_LABELS[type]} ${operator.name} · ${formatFCFA(amount)}`)
         setFeedback({ kind: kept.kind, text: kept.text })
-        if (kept.kind === "offline") clearForm()
+        if (kept.kind === "offline") {
+          vibrate([40, 80, 40]) // two pulses: kept on the phone, not yet recorded
+          clearForm()
+        }
         return
       }
       if (response.ok) {
         setFeedback({ kind: "ok", text: response.message, warning: response.warning })
+        vibrate(40) // one short pulse: recorded (felt even when the screen is hard to read)
         clearForm()
         // After a correction, leave its address: the next operation starts empty.
         if (correction) router.replace(`/operations/new?branch=${branch.id}`)

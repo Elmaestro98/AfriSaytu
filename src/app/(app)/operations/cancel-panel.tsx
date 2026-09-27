@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { useState, useTransition } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -28,8 +29,13 @@ export function CancelPanel({ transactionId, onClose, thenCorrect = false }: Can
     startTransition(async () => {
       const result = await cancelOperationAction({ transactionId, reason })
       if (!result.ok) return setError(result.error)
-      if (thenCorrect) router.push(`/operations/new?correct=${encodeURIComponent(transactionId)}`)
-      else onClose()
+      if (thenCorrect) {
+        toast.success("Opération annulée", { description: "Saisissez-la de nouveau, corrigée." })
+        router.push(`/operations/new?correct=${encodeURIComponent(transactionId)}`)
+      } else {
+        toast.success("Opération annulée", { description: "Ses effets sur les soldes ont été contre-passés." })
+        onClose()
+      }
     })
   }
 

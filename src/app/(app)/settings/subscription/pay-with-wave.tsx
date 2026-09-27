@@ -2,6 +2,7 @@
 
 import { ExternalLink } from "lucide-react"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import type { SubscriptionPlan } from "@/generated/prisma/enums"
 import { formatFCFA } from "@/lib/money"
@@ -32,7 +33,10 @@ export function PayWithWave({ defaultPlan, waveLink }: { defaultPlan: Subscripti
     startTransition(async () => {
       const result = await declarePaymentAction({ plan, months, providerRef: reference })
       setMessage(result.ok ? { ok: true, text: "Merci ! Votre paiement est en attente de confirmation." } : { ok: false, text: result.error })
-      if (result.ok) setReference("")
+      if (result.ok) {
+        setReference("")
+        toast.success("Merci ! Paiement déclaré", { description: "Il sera activé dès que l'équipe AfriSaytu aura vérifié la réception." })
+      }
     })
   }
 

@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react"
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 
 import { AmountInput } from "@/components/business/amount-input"
 import { OperatorTile } from "@/components/business/operator-tile"
@@ -41,7 +42,10 @@ export function AddOperatorForm({ branchId, operators }: AddOperatorFormProps) {
     setError(null)
     startTransition(async () => {
       const result = await addOperatorAccountAction({ branchId, operatorId, accountNumber, openingBalance, alertThreshold })
-      if (result.ok) setOpen(false)
+      if (result.ok) {
+        setOpen(false)
+        toast.success("Opérateur ajouté au point de vente")
+      }
       else setError(result.error)
     })
   }
