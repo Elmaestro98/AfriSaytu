@@ -1,6 +1,5 @@
 "use client"
 
-import { useClerk } from "@clerk/nextjs"
 import { ChevronLeft, Delete, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
@@ -11,7 +10,7 @@ import { formatTime } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 import type { SwitchScreenData } from "@/server/devices/switch"
 
-import { leaveSharedModeAction, unlockAction } from "./actions"
+import { unlockAction } from "./actions"
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"] as const
 
@@ -19,7 +18,6 @@ const initials = (name: string) => name.split(" ").slice(0, 2).map((word) => wor
 
 export function SwitchScreen({ deviceName, branchName, agents }: SwitchScreenData) {
   const router = useRouter()
-  const { signOut } = useClerk()
   const [chosen, setChosen] = useState<{ id: string; name: string } | null>(null)
   const [pin, setPin] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -45,12 +43,6 @@ export function SwitchScreen({ deviceName, branchName, agents }: SwitchScreenDat
       })
     }
   }
-
-  const leave = () =>
-    startTransition(async () => {
-      await leaveSharedModeAction()
-      await signOut({ redirectUrl: "/sign-in" })
-    })
 
   return (
     <main className="flex min-h-svh flex-col bg-primary text-primary-foreground">
@@ -86,10 +78,11 @@ export function SwitchScreen({ deviceName, branchName, agents }: SwitchScreenDat
               {leaving ? (
                 <div className="flex flex-col gap-2 rounded-xl bg-muted p-3">
                   <p className="text-sm">Ce téléphone ne sera plus partagé et sera déconnecté : il faudra le mot de passe du compte pour revenir.</p>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="destructive" className="h-11 flex-1" disabled={isPending} onClick={leave}>Quitter</Button>
+                  {/* A plain form post: handled in one go on the server, then the sign-out page. */}
+                  <form method="post" action="/switch/leave" className="flex gap-2">
+                    <Button type="submit" variant="destructive" className="h-11 flex-1">Quitter</Button>
                     <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => setLeaving(false)}>Annuler</Button>
-                  </div>
+                  </form>
                 </div>
               ) : (
                 <Button type="button" variant="ghost" className="h-11 text-muted-foreground" onClick={() => setLeaving(true)}>

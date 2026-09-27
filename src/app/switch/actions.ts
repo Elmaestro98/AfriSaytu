@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
-import { leaveSharedMode, lock, unlock } from "@/server/devices/switch"
+import { lock, unlock } from "@/server/devices/switch"
 import type { ActionResult } from "@/server/result"
 
 const unlockSchema = z.object({ memberId: z.string().min(1).max(64), pin: z.string().regex(/^\d{4}$/, "Tapez les 4 chiffres de votre code.") })
@@ -32,8 +32,4 @@ export async function lockAction(): Promise<void> {
 // Called while the agent works (at most once a minute): renews their 5 minutes.
 export async function keepAliveAction(): Promise<void> {
   await requireActor()
-}
-
-export async function leaveSharedModeAction(): Promise<ActionResult> {
-  return guard(() => leaveSharedMode())
 }
