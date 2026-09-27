@@ -30,6 +30,10 @@ describe("describeAudit", () => {
     expect(describeAudit({ action: "member.invite", before: null, after: { email: "awa@exemple.sn", role: "AGENT" } }).detail).toBe("awa@exemple.sn · Agent")
   })
 
+  it("details a new closing time", () => {
+    expect(describeAudit({ action: "branch.update", before: { closesAt: "21:00" }, after: { closesAt: "19:30" } }).detail).toBe("Fermeture 21:00 → 19:30")
+  })
+
   it("details a role change", () => {
     expect(describeAudit({ action: "member.changeRole", before: { role: "AGENT" }, after: { role: "MANAGER" } }).detail).toBe("Agent → Gérant")
   })

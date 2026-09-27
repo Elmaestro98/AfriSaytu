@@ -6,7 +6,7 @@ import { after } from "next/server"
 import { createOperationSchema } from "@/schemas/operation"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
-import { notifyDailyTier, notifyLowBalances } from "@/server/notifications/triggers"
+import { notifyDailyTier, notifyLiquidity, notifyLowBalances } from "@/server/notifications/triggers"
 import { createOperation, type CreateOperationResult } from "@/server/operations/create"
 
 export async function createOperationAction(raw: unknown): Promise<CreateOperationResult> {
@@ -25,6 +25,7 @@ export async function createOperationAction(raw: unknown): Promise<CreateOperati
       const { branchId, operatorId, type, amount } = parsed.data
       after(async () => {
         await notifyLowBalances(ctx, branchId)
+        await notifyLiquidity(ctx, branchId)
         await notifyDailyTier(ctx, { branchId, operatorId, type, amount })
       })
     }

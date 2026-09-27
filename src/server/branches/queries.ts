@@ -19,6 +19,7 @@ export type BranchRow = {
   id: string
   name: string
   address: string | null
+  closesAt: number // minutes after midnight in Dakar
   accounts: AccountRow[]
   addableOperators: { id: string; name: string; color: string | null; logoSrc: string | null }[]
 }
@@ -35,6 +36,7 @@ export async function listManagedBranches(ctx: ActorContext): Promise<BranchRow[
       id: true,
       name: true,
       address: true,
+      closesAt: true,
       accounts: {
         where: { isActive: true },
         // Enum order in PostgreSQL follows the declaration: OPERATOR first, CASH drawer last.
@@ -65,6 +67,7 @@ export async function listManagedBranches(ctx: ActorContext): Promise<BranchRow[
       id: branch.id,
       name: branch.name,
       address: branch.address,
+      closesAt: branch.closesAt,
       accounts: branch.accounts.map((account) => ({
         id: account.id,
         kind: account.kind,

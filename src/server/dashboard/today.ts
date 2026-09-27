@@ -4,6 +4,8 @@ import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { buildAlerts, STALE_HOURS, type Alert } from "@/server/dashboard/alerts"
 import { getBalances } from "@/server/ledger/balances"
+import type { Forecast } from "@/server/liquidity/forecast"
+import { loadForecasts } from "@/server/liquidity/load"
 import { visibilityWhere } from "@/server/operations/history-where"
 import { dailySeries, percentChange, periodRanges, type DayVolume } from "@/server/supervision/compute"
 
@@ -17,6 +19,7 @@ export type TodayBalance = {
   balance: number
   alertThreshold: number | null
   level: BalanceLevel
+  forecast: Forecast // at today's pace, until the branch closes
 }
 
 export type TodaySummary = {
@@ -52,7 +55,7 @@ export async function getTodaySummary(ctx: ActorContext, now = new Date()): Prom
     ctx.db.account.findMany({
       where: { isActive: true, branch: branchWhere },
       orderBy: [{ branch: { createdAt: "asc" } }, { kind: "asc" }, { label: "asc" }],
-      select: { id: true, label: true, kind: true, alertThreshold: true, branch: { select: { name: true } }, operator: { select: { id: true, color: true, logo: { select: { updatedAt: true } } } } },
+      select: { id: true, branchId: true, label: true, kind: true, alertThreshold: true, branch: { select: { name: true } }, operator: { select: { id: true, color: true, logo: { select: { updatedAt: true } } } } },
     }),
     ctx.db.branch.findMany({
       where: branchWhere,
@@ -69,6 +72,7 @@ export async function getTodaySummary(ctx: ActorContext, now = new Date()): Prom
     }),
   ])
   const amounts = await getBalances(ctx.db, accounts.map((account) => account.id))
+  const forecasts = await loadForecasts(ctx.db, accounts.map((account) => ({ id: account.id, branchId: account.branchId, balance: amounts.get(account.id) ?? 0 })), now)
 
   const balances: TodayBalance[] = accounts.map((account) => {
     const balance = amounts.get(account.id) ?? 0
@@ -82,6 +86,7 @@ export async function getTodaySummary(ctx: ActorContext, now = new Date()): Prom
       balance,
       alertThreshold: account.alertThreshold,
       level: balanceLevel(balance, account.alertThreshold),
+      forecast: forecasts.get(account.id) ?? { status: "none" },
     }
   })
 

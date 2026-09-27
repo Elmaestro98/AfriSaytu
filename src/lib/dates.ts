@@ -102,3 +102,13 @@ const shortDateFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, 
 export function formatDayKey(key: string): string {
   return shortDateFormat.format(new Date(`${key}T12:00:00.000Z`))
 }
+
+// "21:00" <-> 1260, for the closing time field.
+export function minutesToTime(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`
+}
+
+export function timeToMinutes(value: string): number | null {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value)
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null
+}

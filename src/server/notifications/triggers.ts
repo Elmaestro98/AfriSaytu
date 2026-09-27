@@ -3,8 +3,10 @@ import { dayKey, startOfDakarDay } from "@/lib/dates"
 import { DAILY_VOLUME_TYPES, tiersInForce } from "@/server/commissions/daily"
 import type { TenantContext } from "@/server/db"
 import { getBalances } from "@/server/ledger/balances"
+import { formatHour } from "@/server/liquidity/forecast"
+import { loadForecasts } from "@/server/liquidity/load"
 import { recipients } from "@/server/notifications/kinds"
-import { closingGapMessage, lowBalanceMessage, tierNearMessage, tierReachedMessage } from "@/server/notifications/messages"
+import { closingGapMessage, liquidityMessage, lowBalanceMessage, tierNearMessage, tierReachedMessage } from "@/server/notifications/messages"
 import { isLowBalance, tierEvents } from "@/server/notifications/rules"
 import { claimOnce, loadCandidates, pushConfigured, pushToMembers } from "@/server/notifications/send"
 
@@ -45,11 +47,36 @@ export function notifyLowBalances(ctx: Ctx, branchId: string, now = new Date()):
   })
 }
 
+// Accounts of the branch that run dry in less than 2 hours at the current pace: once per account
+// and per day (after an operation or a cancellation, which set the pace).
+export function notifyLiquidity(ctx: Ctx, branchId: string, now = new Date()): Promise<void> {
+  return safely("liquidity", async () => {
+    const accounts = await ctx.db.account.findMany({ where: { branchId, isActive: true }, select: { id: true, label: true, branch: { select: { name: true } } } })
+    if (accounts.length === 0) return
+    const balances = await getBalances(ctx.db, accounts.map((account) => account.id))
+    const forecasts = await loadForecasts(ctx.db, accounts.map((account) => ({ id: account.id, branchId, balance: balances.get(account.id) ?? 0 })), now)
+    const soon = accounts.flatMap((account) => {
+      const forecast = forecasts.get(account.id)
+      return forecast?.status === "soon" ? [{ account, at: forecast.at }] : []
+    })
+    if (soon.length === 0) return
+
+    const members = recipients(await loadCandidates(ctx.db), { kind: "LIQUIDITY", branchId })
+    if (members.length === 0) return
+    for (const { account, at } of soon) {
+      if (!(await claimOnce(ctx.db, ctx.organizationId, `liquidity:${account.id}:${dayKey(now)}`))) continue
+      await pushToMembers(ctx.db, members, liquidityMessage({ accountId: account.id, accountLabel: account.label, branchName: account.branch.name, hour: formatHour(at) }))
+    }
+  })
+}
+
 // A cancellation gives money back to one account and takes it from the other: check its branch.
 export function notifyAfterCancel(ctx: Ctx, transactionId: string, now = new Date()): Promise<void> {
   return safely("cancellation", async () => {
     const operation = await ctx.db.transaction.findFirst({ where: { id: transactionId }, select: { branchId: true } })
-    if (operation) await notifyLowBalances(ctx, operation.branchId, now)
+    if (!operation) return
+    await notifyLowBalances(ctx, operation.branchId, now)
+    await notifyLiquidity(ctx, operation.branchId, now)
   })
 }
 

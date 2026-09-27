@@ -17,6 +17,13 @@ export const updateAccountSchema = z.object({
   alertThreshold: amountSchema,
 })
 
+export const updateBranchHoursSchema = z.object({
+  branchId: z.string().min(1),
+  closesAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Heure invalide (ex. 21:00)"),
+})
+
+export type UpdateBranchHoursInput = z.infer<typeof updateBranchHoursSchema>
+
 export const setOperatorActiveSchema = z.object({
   operatorId: z.string().min(1),
   active: z.boolean(),

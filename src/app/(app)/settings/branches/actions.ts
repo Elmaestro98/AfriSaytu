@@ -1,8 +1,8 @@
 "use server"
 
-import { addOperatorAccountSchema, createBranchSchema, updateAccountSchema } from "@/schemas/settings"
+import { addOperatorAccountSchema, createBranchSchema, updateAccountSchema, updateBranchHoursSchema } from "@/schemas/settings"
 import { requireActor } from "@/server/auth/actor"
-import { addOperatorAccount, createBranch, updateAccount } from "@/server/branches/manage"
+import { addOperatorAccount, createBranch, updateAccount, updateBranchHours } from "@/server/branches/manage"
 import type { ActionResult } from "@/server/result"
 
 import { firstIssue, runSettingsAction } from "../guard"
@@ -25,4 +25,10 @@ export async function updateAccountAction(raw: unknown): Promise<ActionResult> {
   const parsed = updateAccountSchema.safeParse(raw)
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error.issues) }
   return runSettingsAction(PATH, async () => updateAccount(await requireActor(), parsed.data))
+}
+
+export async function updateBranchHoursAction(raw: unknown): Promise<ActionResult> {
+  const parsed = updateBranchHoursSchema.safeParse(raw)
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error.issues) }
+  return runSettingsAction(PATH, async () => updateBranchHours(await requireActor(), parsed.data))
 }

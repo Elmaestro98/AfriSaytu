@@ -148,6 +148,7 @@ model Branch {
   name           String
   address        String?
   isActive       Boolean  @default(true)
+  closesAt       Int      @default(1260) // closing time, minutes after midnight in Dakar (1260 = 21:00)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

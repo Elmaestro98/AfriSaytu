@@ -11,6 +11,7 @@ export const AUDIT_ACTIONS = {
   "member.deactivate": "Désactivation d'un membre",
   "member.changeRole": "Changement de rôle",
   "branch.create": "Création de point de vente",
+  "branch.update": "Modification de point de vente",
   "account.create": "Ajout de compte",
   "account.update": "Modification de compte",
   "operator.activate": "Activation d'opérateur",

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
-import type { AddOperatorAccountInput, CreateBranchInput, UpdateAccountInput } from "@/schemas/settings"
+import type { AddOperatorAccountInput, CreateBranchInput, UpdateAccountInput, UpdateBranchHoursInput } from "@/schemas/settings"
+import { minutesToTime, timeToMinutes } from "@/lib/dates"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize } from "@/server/auth/permissions"
 import { recordAudit } from "@/server/audit/log"
@@ -145,6 +146,32 @@ export async function updateAccount(ctx: ActorContext, input: UpdateAccountInput
     branchId: account.branchId,
     before: { accountNumber: account.accountNumber, alertThreshold: account.alertThreshold },
     after: { accountNumber, alertThreshold: input.alertThreshold },
+  })
+  return { ok: true }
+}
+
+// Closing time of a branch (liquidity forecast). Audited like the other branch settings.
+export async function updateBranchHours(ctx: ActorContext, input: UpdateBranchHoursInput): Promise<ActionResult> {
+  const inactive = await refuseWriteIfInactive(ctx)
+  if (inactive) return inactive
+  const closesAt = timeToMinutes(input.closesAt)
+  if (closesAt === null) return { ok: false, error: "Heure invalide (ex. 21:00)." }
+
+  const branch = await ctx.db.branch.findFirst({ where: { id: input.branchId }, select: { id: true, closesAt: true } })
+  if (!branch) return { ok: false, error: "Point de vente introuvable." }
+  if (!authorize(ctx.actor, "catalog:manage", { branchId: branch.id }).allowed) {
+    return { ok: false, error: "Vous ne gérez pas ce point de vente." }
+  }
+  if (branch.closesAt === closesAt) return { ok: true }
+
+  await ctx.db.branch.update({ where: { id: branch.id }, data: { closesAt } })
+  await recordAudit(ctx, {
+    action: "branch.update",
+    entity: "Branch",
+    entityId: branch.id,
+    branchId: branch.id,
+    before: { closesAt: minutesToTime(branch.closesAt) },
+    after: { closesAt: minutesToTime(closesAt) },
   })
   return { ok: true }
 }

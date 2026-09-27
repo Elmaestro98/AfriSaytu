@@ -17,6 +17,15 @@ export function lowBalanceMessage(input: { accountId: string; accountLabel: stri
   }
 }
 
+export function liquidityMessage(input: { accountId: string; accountLabel: string; branchName: string; hour: string }): PushMessage {
+  return {
+    title: `${input.accountLabel} : épuisé vers ${input.hour}`,
+    body: `À ce rythme, ce solde sera à zéro vers ${input.hour} · ${input.branchName}. Pensez à approvisionner.`,
+    url: "/cash",
+    tag: `liquidity-${input.accountId}`,
+  }
+}
+
 export function tierReachedMessage(input: { operatorName: string; branchName: string; number: number; commission: number }): PushMessage {
   return {
     title: `${input.operatorName} : palier ${input.number} atteint 🎉`,

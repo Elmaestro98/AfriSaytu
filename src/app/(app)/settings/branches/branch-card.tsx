@@ -7,6 +7,7 @@ import type { BranchRow } from "@/server/branches/queries"
 
 import { AccountRow } from "./account-row"
 import { AddOperatorForm } from "./add-operator-form"
+import { BranchHours } from "./branch-hours"
 
 // Display totals of a branch (sums of the theoretical balances shown below, nothing more).
 export function branchTotals(branch: BranchRow) {
@@ -55,6 +56,8 @@ export function BranchCard({ branch }: { branch: BranchRow }) {
           </span>
         )}
       </header>
+
+      <BranchHours branchId={branch.id} closesAt={branch.closesAt} />
 
       <div className="grid grid-cols-3 divide-x border-b px-4">
         <Figure label="UV" value={totals.uv} />

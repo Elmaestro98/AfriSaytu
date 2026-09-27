@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Banknote, ChevronRight, Zap } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, Banknote, ChevronRight, CircleCheck, Hourglass, Zap } from "lucide-react"
 import Link from "next/link"
 
 import { OperatorBadge } from "@/components/business/operator-badge"
@@ -8,7 +8,27 @@ import { formatFCFA } from "@/lib/money"
 import { TYPE_LABELS } from "@/lib/operation-types"
 import { cn } from "@/lib/utils"
 import type { TodaySummary } from "@/server/dashboard/today"
+import { formatHour, type Forecast } from "@/server/liquidity/forecast"
 import type { OperationRow } from "@/server/operations/queries"
+
+// At the pace of the last hours (server/liquidity/forecast.ts): an estimate, said as such.
+function ForecastLine({ forecast }: { forecast: Forecast }) {
+  if (forecast.status === "none") return null
+  if (forecast.status === "enough") {
+    return (
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+        <CircleCheck className="size-3.5 shrink-0" aria-hidden /> Suffit jusqu&apos;à la fermeture, à ce rythme
+      </p>
+    )
+  }
+  const soon = forecast.status === "soon"
+  return (
+    <p className={cn("flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold", soon ? "bg-destructive/10 text-destructive" : "bg-brand-accent/15 text-brand-accent-strong")}>
+      <Hourglass className="size-3.5 shrink-0" aria-hidden />
+      À ce rythme : épuisé vers {formatHour(forecast.at)}{soon ? "" : ", avant la fermeture"}
+    </p>
+  )
+}
 
 // Balances of the accounts (mockup 02): one card each, with the level against the alert threshold.
 export function BalanceCards({ today, canEnter }: { today: TodaySummary; canEnter: boolean }) {
@@ -66,6 +86,7 @@ export function BalanceCards({ today, canEnter }: { today: TodaySummary; canEnte
               ) : (
                 <p className="text-xs text-muted-foreground">Aucun seuil d&apos;alerte</p>
               )}
+              <ForecastLine forecast={balance.forecast} />
             </li>
           )
         })}

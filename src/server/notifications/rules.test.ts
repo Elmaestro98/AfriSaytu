@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { kindsFor, recipients, type Candidate } from "@/server/notifications/kinds"
-import { closingGapMessage, lowBalanceMessage, subscriptionMessage } from "@/server/notifications/messages"
+import { closingGapMessage, liquidityMessage, lowBalanceMessage, subscriptionMessage } from "@/server/notifications/messages"
 import { isLowBalance, tierEvents } from "@/server/notifications/rules"
 
 // Tiers like the admin's Wave scale: 0-999 999 -> 3 000, 1 000 000-1 499 999 -> 5 000, 1 500 000+ -> 6 650.
@@ -70,8 +70,8 @@ describe("recipients", () => {
   })
 
   it("offers each role only its kinds", () => {
-    expect(kindsFor("AGENT")).toEqual(["LOW_BALANCE", "DAILY_TIER", "CLOSING_REMINDER"])
-    expect(kindsFor("OWNER")).toHaveLength(5)
+    expect(kindsFor("AGENT")).toEqual(["LOW_BALANCE", "LIQUIDITY", "DAILY_TIER", "CLOSING_REMINDER"])
+    expect(kindsFor("OWNER")).toHaveLength(6)
   })
 })
 
@@ -80,6 +80,12 @@ describe("messages", () => {
     const message = lowBalanceMessage({ accountId: "a1", accountLabel: "Orange Money", branchName: "Kiosque UGB", balance: 45_000, threshold: 50_000 })
     expect(message.title).toBe("Solde bas : Orange Money")
     expect(message.body).toBe("45 000 FCFA (seuil 50 000 FCFA) · Kiosque UGB. Pensez à approvisionner.")
+  })
+
+  it("tells when a balance runs dry", () => {
+    const message = liquidityMessage({ accountId: "a1", accountLabel: "Wave", branchName: "Kiosque UGB", hour: "16 h" })
+    expect(message.title).toBe("Wave : épuisé vers 16 h")
+    expect(message.url).toBe("/cash")
   })
 
   it("sums up a closing gap", () => {

@@ -49,6 +49,11 @@ function detailOf(action: AuditActionKey, before: Json, after: Json): string | n
       if (!format || count === null) return null
       return `${count} opération${count > 1 ? "s" : ""} en ${format.toUpperCase()}`
     }
+    case "branch.update": {
+      const from = text(before.closesAt)
+      const to = text(after.closesAt)
+      return from && to ? `Fermeture ${from} → ${to}` : null
+    }
     case "member.invite": {
       const email = text(after.email)
       const role = text(after.role)
