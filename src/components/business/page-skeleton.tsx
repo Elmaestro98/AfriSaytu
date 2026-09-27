@@ -1,8 +1,13 @@
+import { BrandMark } from "@/components/business/brand-mark"
+
 // Shown instantly while a screen loads (slow networks): the shape of a page, never a blank
-// or a blocking spinner.
+// or a blocking spinner. The logo breathes softly in the middle, behind nothing.
 export function PageSkeleton() {
   return (
-    <div className="flex flex-1 flex-col" aria-busy="true" aria-label="Chargement">
+    <div className="relative flex flex-1 flex-col" aria-busy="true" aria-label="Chargement">
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+        <BrandMark bare className="size-20 animate-breathe opacity-40 motion-reduce:animate-none" />
+      </div>
       <div className="h-16 border-b bg-card lg:h-20" />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 py-6 lg:mx-0 lg:max-w-6xl lg:px-8 lg:py-8">
         <div className="h-8 w-2/3 animate-pulse rounded-lg bg-muted" />

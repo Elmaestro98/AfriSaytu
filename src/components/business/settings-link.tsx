@@ -12,7 +12,7 @@ export function SettingsLink({ href, icon: Icon, title, description }: SettingsL
   return (
     <Link
       href={href}
-      className="flex min-h-16 items-center gap-4 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent"
+      className="flex min-h-16 items-center gap-4 rounded-2xl border bg-card p-4 transition-all duration-150 hover:bg-accent active:scale-[0.98] active:bg-accent"
     >
       <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
         <Icon className="size-5" aria-hidden />

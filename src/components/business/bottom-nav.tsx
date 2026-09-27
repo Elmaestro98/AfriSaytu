@@ -1,7 +1,7 @@
 "use client"
 
-import { Plus } from "lucide-react"
-import Link from "next/link"
+import { Plus, type LucideIcon } from "lucide-react"
+import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
 
 import { NAV_ITEMS, isNavActive, type NavKey } from "@/components/business/nav-items"
@@ -12,6 +12,20 @@ const HIDDEN_ON = ["/operations/new"]
 // Five tabs at most on a phone (mockups 04 to 06): statistics, supervision and settings are
 // reached from the home screen.
 const DESKTOP_ONLY: readonly NavKey[] = ["stats", "supervision", "settings"]
+
+// Inside a tab: lights up the moment it is touched (pending), before the page arrives.
+function TabContent({ icon: Icon, label, active }: { icon: LucideIcon; label: string; active: boolean }) {
+  const { pending } = useLinkStatus()
+  const on = active || pending
+  return (
+    <>
+      <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-all duration-150 active:scale-90", on && "bg-accent", pending && "scale-110")}>
+        <Icon className={cn("size-5 transition-colors", on ? "text-primary" : "text-muted-foreground")} aria-hidden />
+      </span>
+      <span className={cn("transition-colors", on ? "text-primary" : "text-muted-foreground")}>{label}</span>
+    </>
+  )
+}
 
 // Phone navigation, within thumb reach (mockups 04 to 06), with "Saisir" in the middle.
 // Hidden on desktop, where the side navigation takes over.
@@ -40,12 +54,8 @@ export function BottomNav({ items }: { items: readonly NavKey[] }) {
           return (
             <li key={key} className="flex flex-1">
               <Link href={href} aria-current={active ? "page" : undefined}
-                className={cn("flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold transition-colors",
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-                <span className={cn("flex h-7 w-12 items-center justify-center rounded-full", active && "bg-accent")}>
-                  <Icon className="size-5" aria-hidden />
-                </span>
-                {label}
+                className="flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-semibold">
+                <TabContent icon={Icon} label={label} active={active} />
               </Link>
             </li>
           )

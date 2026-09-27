@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "any", // agents on a phone, managers on a computer
-    background_color: "#ffffff",
+    background_color: "#0B5D4B", // Android launch screen: the logo on the brand green
     theme_color: "#0B5D4B",
     categories: ["finance", "business", "productivity"],
     icons: [

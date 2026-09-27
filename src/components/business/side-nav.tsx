@@ -2,7 +2,7 @@
 
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 import { Plus } from "lucide-react"
-import Link from "next/link"
+import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
 
 import { BrandMark } from "@/components/business/brand-mark"
@@ -14,6 +14,12 @@ type SideNavProps = {
   organizationName: string
   memberName: string
   roleLabel: string
+}
+
+// The section just clicked, while its page loads.
+function PendingDot() {
+  const { pending } = useLinkStatus()
+  return pending ? <span aria-hidden className="size-2 animate-pulse rounded-full bg-brand-accent" /> : null
 }
 
 // Desktop navigation (mockups 01 and 02): brand, main action, sections, account at the bottom.
@@ -50,10 +56,11 @@ export function SideNav({ items, organizationName, memberName, roleLabel }: Side
             return (
               <li key={key}>
                 <Link href={href} aria-current={active ? "page" : undefined}
-                  className={cn("flex h-11 items-center gap-3 rounded-xl px-3 font-semibold transition-colors",
+                  className={cn("flex h-11 items-center gap-3 rounded-xl px-3 font-semibold transition-all duration-150 active:scale-[0.98]",
                     active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent")}>
                   <Icon className="size-5" aria-hidden />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  <PendingDot />
                 </Link>
               </li>
             )
