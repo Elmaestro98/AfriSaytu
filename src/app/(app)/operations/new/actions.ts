@@ -31,10 +31,11 @@ export async function createOperationAction(raw: unknown): Promise<CreateOperati
     }
     return result
   } catch (error) {
-    if (error instanceof SessionError) return { ok: false, error: "Accès refusé. Reconnectez-vous." }
+    // Passing failures: an operation kept offline stays on the phone and is sent again later.
+    if (error instanceof SessionError) return { ok: false, retry: true, error: "Accès refusé. Reconnectez-vous." }
     console.error("Operation entry failed", error)
     // In development only, show the technical cause on screen to help debugging.
     const detail = process.env.NODE_ENV === "development" && error instanceof Error ? ` [${error.name}: ${error.message}]` : ""
-    return { ok: false, error: `L'opération n'a pas été enregistrée. Réessayez.${detail}` }
+    return { ok: false, retry: true, error: `L'opération n'a pas été enregistrée. Réessayez.${detail}` }
   }
 }

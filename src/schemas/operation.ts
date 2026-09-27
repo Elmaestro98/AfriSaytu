@@ -37,6 +37,9 @@ export const createOperationSchema = z
       .transform((value) => (value === "" ? null : value)),
     clientCreatedAt: z.iso.datetime().nullable(), // phone time, informative only
     confirmDuplicate: z.boolean(),
+    // Offline entry: kept on the phone, sent later, only by the member who entered it.
+    enteredOffline: z.boolean().default(false),
+    expectedMemberId: z.string().max(64).nullable().default(null),
   })
   .refine((input) => input.type !== "OTHER" || (input.manual !== null && (input.manual.uv !== 0 || input.manual.cash !== 0)), {
     path: ["manual"],

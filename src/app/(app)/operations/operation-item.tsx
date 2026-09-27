@@ -19,6 +19,7 @@ export function OperationItem({ operation, showAuthor }: { operation: OperationR
   const details = [
     operation.customerPhone,
     formatTime(operation.createdAt),
+    operation.offlineAt ? `saisie hors ligne à ${formatTime(operation.offlineAt)}` : null,
     operation.reference ? `Réf. ${operation.reference}` : null,
     showAuthor ? operation.authorName : null,
   ].filter(Boolean)

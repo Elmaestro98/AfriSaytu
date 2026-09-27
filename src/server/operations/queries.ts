@@ -23,6 +23,7 @@ export type OperationRow = {
   customerPhone: string | null // already masked for agents
   reference: string | null
   createdAt: Date
+  offlineAt: Date | null // entered offline: the phone's time (createdAt is when it was received)
   status: "VALID" | "CANCELLED"
   cancelReason: string | null
   canCancel: boolean
@@ -38,6 +39,8 @@ export const OPERATION_SELECT = {
   customerPhone: true,
   reference: true,
   createdAt: true,
+  clientCreatedAt: true,
+  enteredOffline: true,
   status: true,
   cancelReason: true,
   branchId: true,
@@ -69,6 +72,7 @@ export function toOperationRow(ctx: ActorContext, operation: SelectedOperation, 
     customerPhone: phone ? (ctx.actor.role === "AGENT" ? maskPhone(phone) : formatPhone(phone)) : null,
     reference: operation.reference,
     createdAt: operation.createdAt,
+    offlineAt: operation.enteredOffline ? operation.clientCreatedAt : null,
     status: operation.status,
     cancelReason: operation.cancelReason,
     canCancel: planCancellation(ctx.actor, operation, now).ok,

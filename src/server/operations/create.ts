@@ -14,7 +14,7 @@ export const DUPLICATE_WINDOW_MS = 3 * 60_000
 
 export type CreateOperationResult =
   | { ok: true; transactionId: string; message: string; warning: string | null }
-  | { ok: false; error: string; duplicate?: boolean }
+  | { ok: false; error: string; duplicate?: boolean; retry?: boolean } // retry: a passing failure, try again later
 
 function isUniqueViolation(error: unknown, field: string): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") return false
@@ -26,6 +26,12 @@ function isUniqueViolation(error: unknown, field: string): boolean {
 export async function createOperation(ctx: ActorContext, input: CreateOperationInput): Promise<CreateOperationResult> {
   const inactive = await refuseWriteIfInactive(ctx)
   if (inactive) return inactive
+
+  // An operation kept offline is sent only in its author's session: never under someone else's
+  // name on a shared phone.
+  if (input.expectedMemberId && input.expectedMemberId !== ctx.actor.memberId) {
+    return { ok: false, retry: true, error: "Cette opération a été saisie par un autre membre sur ce téléphone." }
+  }
 
   // A network retry of an operation already recorded: answer success without writing twice.
   const replay = await ctx.db.transaction.findFirst({
@@ -115,6 +121,7 @@ export async function createOperation(ctx: ActorContext, input: CreateOperationI
           note: input.note,
           idempotencyKey: input.idempotencyKey,
           clientCreatedAt: input.clientCreatedAt ? new Date(input.clientCreatedAt) : null,
+          enteredOffline: input.enteredOffline,
         },
         select: { id: true },
       })

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import { AmountInput } from "@/components/business/amount-input"
+import { useOfflineQueue } from "@/components/business/offline/use-offline-queue"
 import { Button } from "@/components/ui/button"
 import { cashCountTotal, type CashCount } from "@/lib/cash-count"
 import { formatFCFA } from "@/lib/money"
+import { pendingForBranch } from "@/lib/offline/queue"
 import { cn } from "@/lib/utils"
 import { needsJustification } from "@/server/closing/compute"
 import type { ClosingContext } from "@/server/closing/queries"
@@ -24,6 +26,8 @@ export function ClosingScreen({ context }: { context: ClosingContext }) {
   const [confirming, setConfirming] = useState(false)
   const [feedback, setFeedback] = useState<{ kind: "ok" | "error"; text: string } | null>(null)
   const [isPending, startTransition] = useTransition()
+  // Operations of this branch still on this phone (no network): the count would miss them.
+  const waitingHere = pendingForBranch(useOfflineQueue(), context.branchId)
 
   const operatorAccounts = context.accounts.filter((account) => account.kind === "OPERATOR")
   const cashAccounts = context.accounts.filter((account) => account.kind === "CASH")
@@ -116,6 +120,12 @@ export function ClosingScreen({ context }: { context: ClosingContext }) {
               {missing > 0 ? "—" : `${totalDifference > 0 ? "+" : ""}${formatFCFA(totalDifference)}`}
             </span>
           </p>
+          {waitingHere > 0 && (
+            <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+              {waitingHere} opération{waitingHere > 1 ? "s" : ""} de ce point de vente {waitingHere > 1 ? "attendent" : "attend"} sur ce téléphone.
+              Retrouvez du réseau pour {waitingHere > 1 ? "les " : "l'"}envoyer avant de clôturer.
+            </p>
+          )}
           {!ready && (
             <p className="text-sm text-muted-foreground">
               {missing > 0 ? `Saisissez le solde réel de ${missing} compte${missing > 1 ? "s" : ""}.` : `Justifiez ${unjustified} écart${unjustified > 1 ? "s" : ""}.`}
@@ -127,7 +137,7 @@ export function ClosingScreen({ context }: { context: ClosingContext }) {
                 Une fois validée, la journée est verrouillée : ses opérations ne pourront plus être annulées, sauf réouverture par le gérant.
               </p>
               <div className="flex gap-3">
-                <Button type="button" className="h-12 flex-[2] text-base font-bold" disabled={isPending} onClick={submit}>
+                <Button type="button" className="h-12 flex-[2] text-base font-bold" disabled={isPending || waitingHere > 0} onClick={submit}>
                   {isPending ? "Validation…" : "Confirmer la clôture"}
                 </Button>
                 <Button type="button" variant="outline" className="h-12 flex-1" disabled={isPending} onClick={() => setConfirming(false)}>
@@ -136,7 +146,7 @@ export function ClosingScreen({ context }: { context: ClosingContext }) {
               </div>
             </div>
           ) : (
-            <Button type="button" className="h-14 text-lg font-bold" disabled={!ready || !context.canValidate} onClick={() => setConfirming(true)}>
+            <Button type="button" className="h-14 text-lg font-bold" disabled={!ready || !context.canValidate || waitingHere > 0} onClick={() => setConfirming(true)}>
               <Lock className="size-5" aria-hidden /> Valider et verrouiller la clôture
             </Button>
           )}

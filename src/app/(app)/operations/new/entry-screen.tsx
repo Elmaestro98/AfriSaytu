@@ -1,11 +1,11 @@
 "use client"
 
-import { CircleCheck, RotateCcw } from "lucide-react"
-import Link from "next/link"
+import { RotateCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState, useTransition } from "react"
 
 import { NumericKeypad } from "@/components/business/numeric-keypad"
+import { useOnline } from "@/components/business/offline/use-offline-queue"
 import { Button } from "@/components/ui/button"
 import type { TransactionType } from "@/generated/prisma/enums"
 import { formatAmount, formatFCFA } from "@/lib/money"
@@ -22,9 +22,11 @@ import type { EntryContext } from "@/server/operations/entry-context"
 
 import { createOperationAction } from "./actions"
 import { DirectionPicker, EntryDetailsSection, type EntryDetails } from "./entry-details"
+import { EntryFeedback, OfflineBanner, type Feedback } from "./entry-feedback"
 import { OperatorPicker, TypePicker } from "./entry-pickers"
 import { EntrySummary } from "./entry-summary"
 import { useAmountKeyboard } from "./use-amount-keyboard"
+import { useKeepOffline } from "./use-keep-offline"
 
 const QUICK_AMOUNTS = [5_000, 10_000, 25_000, 50_000]
 const NO_DIRECTION = { uv: 0 as Sign, cash: 0 as Sign }
@@ -52,7 +54,9 @@ export function EntryScreen({ context, branchId, correction = null }: Props) {
   )
   const [manual, setManual] = useState(NO_DIRECTION)
   const [key, setKey] = useState(() => newUuid())
-  const [feedback, setFeedback] = useState<{ kind: "ok" | "error"; text: string; warning?: string | null } | null>(null)
+  const [feedback, setFeedback] = useState<Feedback | null>(null)
+  const online = useOnline()
+  const keepOffline = useKeepOffline(context.member)
   const [duplicate, setDuplicate] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -80,20 +84,40 @@ export function EntryScreen({ context, branchId, correction = null }: Props) {
     setDuplicate(false)
   }
 
+  const clearForm = () => {
+    setAmount(0)
+    setDetails(freshDetails(type))
+    setManual(NO_DIRECTION)
+    setDuplicate(false)
+    setKey(newUuid())
+  }
+
   const submit = (confirmDuplicate: boolean) => {
     setFeedback(null)
     startTransition(async () => {
-      const response = await createOperationAction({
+      const payload = {
         idempotencyKey: key, branchId: branch.id, operatorId: operator.id, type, amount, ...details,
         manual: type === "OTHER" ? manual : null, clientCreatedAt: new Date().toISOString(), confirmDuplicate,
-      })
+      }
+      // No network (known, or the request failed on the way): keep it on this phone. No
+      // navigation here, it would need the network too.
+      let response: Awaited<ReturnType<typeof createOperationAction>> | null = null
+      if (navigator.onLine) {
+        try {
+          response = await createOperationAction(payload)
+        } catch {
+          response = null
+        }
+      }
+      if (!response) {
+        const kept = await keepOffline(payload, `${TYPE_LABELS[type]} ${operator.name} · ${formatFCFA(amount)}`)
+        setFeedback({ kind: kept.kind, text: kept.text })
+        if (kept.kind === "offline") clearForm()
+        return
+      }
       if (response.ok) {
         setFeedback({ kind: "ok", text: response.message, warning: response.warning })
-        setAmount(0)
-        setDetails(freshDetails(type))
-        setManual(NO_DIRECTION)
-        setDuplicate(false)
-        setKey(newUuid())
+        clearForm()
         // After a correction, leave its address: the next operation starts empty.
         if (correction) router.replace(`/operations/new?branch=${branch.id}`)
         else router.refresh() // reload balances for the next operation
@@ -107,7 +131,7 @@ export function EntryScreen({ context, branchId, correction = null }: Props) {
   // Typing the next amount starts a new operation: the previous confirmation goes away.
   const changeAmount = (value: number) => {
     setAmount(value)
-    if (feedback?.kind === "ok") setFeedback(null)
+    if (feedback?.kind === "ok" || feedback?.kind === "offline") setFeedback(null)
   }
 
   const blocked = context.blockNegativeBalance && (result?.goesNegative.length ?? 0) > 0
@@ -128,6 +152,7 @@ export function EntryScreen({ context, branchId, correction = null }: Props) {
   // wrappers let the phone order the items freely while the desktop groups them in columns.
   return (
     <div className={cn(PAGE, "pb-0 lg:pb-8")}>
+      {!online && <OfflineBanner />}
       {correction && !feedback && (
         <p role="status" className="mb-5 rounded-xl border-2 border-brand-accent bg-brand-accent/10 p-3 text-sm">
           <span className="block font-semibold">Correction de « {correction.label} », annulée{correction.cancelReason ? ` (${correction.cancelReason})` : ""}.</span>
@@ -180,25 +205,8 @@ export function EntryScreen({ context, branchId, correction = null }: Props) {
 
           <div className="sticky bottom-0 order-5 -mx-4 border-t bg-card/95 p-4 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0">
             {feedback && (
-              <div role={feedback.kind === "ok" ? "status" : "alert"}
-                className={cn("mb-3 rounded-xl p-3 text-sm font-semibold", feedback.kind === "ok" ? "bg-accent text-accent-foreground" : "bg-destructive/10 text-destructive")}>
-                <p className="flex items-start gap-2">
-                  {feedback.kind === "ok" && <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />}
-                  {feedback.text}
-                </p>
-                {feedback.warning && <p className="mt-1 font-normal">{feedback.warning}</p>}
-                {feedback.kind === "ok" && (
-                  <Link href="/operations" className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
-                    Voir ou annuler
-                  </Link>
-                )}
-                {duplicate && (
-                  <div className="mt-3 flex gap-2">
-                    <Button type="button" className="h-11 flex-1" disabled={isPending} onClick={() => submit(true)}>Enregistrer quand même</Button>
-                    <Button type="button" variant="outline" className="h-11 flex-1" onClick={() => { setDuplicate(false); setFeedback(null) }}>Annuler</Button>
-                  </div>
-                )}
-              </div>
+              <EntryFeedback feedback={feedback} duplicate={duplicate} isPending={isPending}
+                onConfirmDuplicate={() => submit(true)} onDismiss={() => { setDuplicate(false); setFeedback(null) }} />
             )}
             <Button type="button" className="h-14 w-full text-lg font-bold" disabled={!canSubmit} onClick={() => submit(false)}>
               {isPending ? "Enregistrement…" : amount > 0 ? `Valider ${TYPE_LABELS[type].toLowerCase()} · ${formatFCFA(amount)}` : "Saisissez un montant"}

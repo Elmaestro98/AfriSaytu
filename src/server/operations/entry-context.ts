@@ -33,6 +33,7 @@ export type EntryContext = {
   allowManualCommission: boolean
   blockNegativeBalance: boolean
   last: { branchId: string; operatorId: string; type: TransactionType } | null
+  member: { id: string; name: string } // who enters: an operation kept offline is sent in their session only
 }
 
 export async function loadEntryContext(ctx: ActorContext, now = new Date()): Promise<EntryContext> {
@@ -99,6 +100,7 @@ export async function loadEntryContext(ctx: ActorContext, now = new Date()): Pro
   }
 
   return {
+    member: { id: ctx.actor.memberId, name: ctx.memberName },
     branches: entryBranches,
     rules,
     roundingMode: organization?.roundingMode ?? "NEAREST",

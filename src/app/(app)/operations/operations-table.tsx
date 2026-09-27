@@ -48,6 +48,7 @@ export function OperationsTable({ operations, showAuthor }: OperationsTableProps
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="block font-semibold">{formatTime(operation.createdAt)}</span>
                     <span className="block text-xs text-muted-foreground">{formatDayLabel(operation.createdAt)}</span>
+                    {operation.offlineAt && <span className="block text-xs text-brand-accent-strong">Hors ligne à {formatTime(operation.offlineAt)}</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn("flex items-center gap-2 font-semibold", cancelled && "text-muted-foreground")}>
