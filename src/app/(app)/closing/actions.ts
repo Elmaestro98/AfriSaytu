@@ -1,12 +1,14 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 
 import { reopenClosingSchema, validateClosingSchema } from "@/schemas/closing"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
 import { reopenClosing } from "@/server/closing/reopen"
 import { validateClosing } from "@/server/closing/validate"
+import { notifyClosingGap } from "@/server/notifications/triggers"
 import type { ActionResult } from "@/server/result"
 
 async function run(work: () => Promise<ActionResult>, failure: string): Promise<ActionResult> {
@@ -29,7 +31,12 @@ async function run(work: () => Promise<ActionResult>, failure: string): Promise<
 export async function validateClosingAction(raw: unknown): Promise<ActionResult> {
   const parsed = validateClosingSchema.safeParse(raw)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Saisie invalide" }
-  return run(async () => validateClosing(await requireActor(), parsed.data), "La clôture n'a pas été enregistrée.")
+  return run(async () => {
+    const ctx = await requireActor()
+    const result = await validateClosing(ctx, parsed.data)
+    if (result.ok) after(() => notifyClosingGap(ctx, parsed.data.branchId, ctx.actor.memberId))
+    return result
+  }, "La clôture n'a pas été enregistrée.")
 }
 
 export async function reopenClosingAction(raw: unknown): Promise<ActionResult> {

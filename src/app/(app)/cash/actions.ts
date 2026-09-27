@@ -1,21 +1,26 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 
 import { createMovementSchema } from "@/schemas/movement"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
 import { createMovement, type CreateMovementResult } from "@/server/cash/create-movement"
+import { notifyLowBalances } from "@/server/notifications/triggers"
 
 export async function createMovementAction(raw: unknown): Promise<CreateMovementResult> {
   const parsed = createMovementSchema.safeParse(raw)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Saisie invalide" }
 
   try {
-    const result = await createMovement(await requireActor(), parsed.data)
+    const ctx = await requireActor()
+    const result = await createMovement(ctx, parsed.data)
     if (result.ok) {
       revalidatePath("/cash")
       revalidatePath("/operations/new")
+      const { branchId } = parsed.data
+      after(() => notifyLowBalances(ctx, branchId))
     }
     return result
   } catch (error) {

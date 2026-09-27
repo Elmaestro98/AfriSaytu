@@ -9,6 +9,8 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/guide-utilisateur-afrisaytu.pdf",
   "/api/operators/:operatorId/logo",
+  // Vercel Cron has no session: the route checks CRON_SECRET itself.
+  "/api/cron/daily",
 ])
 
 // Every route except the public ones requires a signed-in user.

@@ -38,7 +38,7 @@ async function loadNavigation(): Promise<Navigation | null> {
         ...(can("closing:validate") ? (["closing"] as const) : []),
         ...(can("transaction:view") ? (["stats"] as const) : []),
         ...(ctx.actor.role !== "AGENT" ? (["supervision"] as const) : []),
-        ...(can("catalog:manage") || can("commissionRule:manage") || can("member:manage") ? (["settings"] as const) : []),
+        "settings", // everyone: at least their notifications
       ],
       organizationName: organization?.name ?? "",
       memberName: ctx.memberName,

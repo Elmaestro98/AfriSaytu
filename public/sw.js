@@ -3,7 +3,7 @@
 // It NEVER caches pages nor data (balances, operations, customers): they belong to one user,
 // must always be fresh, and must not stay on a shared phone.
 
-const VERSION = "v1"
+const VERSION = "v2"
 const STATIC_CACHE = `afrisaytu-static-${VERSION}`
 const OFFLINE_URL = "/offline.html"
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png"]
@@ -60,4 +60,36 @@ self.addEventListener("fetch", (event) => {
     )
   }
   // Everything else (data, server actions, exports, logos of operators…): untouched, network only.
+})
+
+// Push notifications (Réglages -> Notifications). The server sends { title, body, url, tag }.
+self.addEventListener("push", (event) => {
+  let message = {}
+  try {
+    message = event.data ? event.data.json() : {}
+  } catch {
+    message = { body: event.data ? event.data.text() : "" }
+  }
+  event.waitUntil(
+    self.registration.showNotification(message.title || "AfriSaytu", {
+      body: message.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: message.tag || undefined, // a newer notification of the same tag replaces the older one
+      data: { url: typeof message.url === "string" && message.url.startsWith("/") ? message.url : "/dashboard" },
+    }),
+  )
+})
+
+// Touching a notification opens its screen: in an AfriSaytu window already open, or a new one.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const url = new URL(event.notification.data?.url || "/dashboard", self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => client.url.startsWith(self.location.origin))
+      if (open) return open.navigate(url).then((client) => (client || open).focus())
+      return self.clients.openWindow(url)
+    }),
+  )
 })

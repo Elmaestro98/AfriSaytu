@@ -31,6 +31,8 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   "Subscription",
   "Payment",
   "AuditLog",
+  "PushSubscription",
+  "NotificationLog",
 ])
 
 // The tenant root is scoped by its own id, and can be updated but never created or deleted here.

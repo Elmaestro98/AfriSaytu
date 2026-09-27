@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import {
   Activity,
+  Bell,
   ChartColumn,
   ChartPie,
   Coins,
@@ -259,12 +260,19 @@ export default async function DashboardPage() {
                 description="Kiosques, agents et écarts de clôture"
               />
             )}
-            {canSettings && (
+            {canSettings ? (
               <SettingsLink
                 href="/settings"
                 icon={Settings}
                 title="Réglages"
                 description="Points de vente, opérateurs, commissions, équipe"
+              />
+            ) : (
+              <SettingsLink
+                href="/settings/notifications"
+                icon={Bell}
+                title="Notifications"
+                description="Soldes bas, paliers, rappel de clôture"
               />
             )}
           </div>

@@ -123,20 +123,22 @@ model Organization {
   blockNegativeBalance  Boolean      @default(false)
   closingDiffThreshold  Int          @default(0) // FCFA, a justification is required above it
 
-  branches        Branch[]
-  members         Member[]
-  memberBranches  MemberBranch[]
-  orgOperators    OrgOperator[]
-  accounts        Account[]
-  transactions    Transaction[]
-  ledgerEntries   LedgerEntry[]
-  movements       InternalMovement[]
-  commissionRules CommissionRule[]
-  closings        DailyClosing[]
-  closingLines    ClosingLine[]
-  subscriptions   Subscription[]
-  payments        Payment[]
-  auditLogs       AuditLog[]
+  branches          Branch[]
+  members           Member[]
+  memberBranches    MemberBranch[]
+  orgOperators      OrgOperator[]
+  accounts          Account[]
+  transactions      Transaction[]
+  ledgerEntries     LedgerEntry[]
+  movements         InternalMovement[]
+  commissionRules   CommissionRule[]
+  closings          DailyClosing[]
+  closingLines      ClosingLine[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+  auditLogs         AuditLog[]
+  pushSubscriptions PushSubscription[]
+  notificationLogs  NotificationLog[]
 }
 
 // Point de vente: a shop or kiosk with its own cash drawer and operator accounts.
@@ -171,14 +173,18 @@ model Member {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization  Organization       @relation(fields: [organizationId], references: [id])
-  branches      MemberBranch[]
-  transactions  Transaction[]      @relation("TransactionAuthor")
-  cancelled     Transaction[]      @relation("TransactionCanceller")
-  movements     InternalMovement[]
-  ledgerEntries LedgerEntry[]
-  closings      DailyClosing[]
-  auditLogs     AuditLog[]
+  organization      Organization       @relation(fields: [organizationId], references: [id])
+  branches          MemberBranch[]
+  transactions      Transaction[]      @relation("TransactionAuthor")
+  cancelled         Transaction[]      @relation("TransactionCanceller")
+  movements         InternalMovement[]
+  ledgerEntries     LedgerEntry[]
+  closings          DailyClosing[]
+  auditLogs         AuditLog[]
+  pushSubscriptions PushSubscription[]
+
+  // Notification kinds this member turned off (e.g. "DAILY_TIER"); everything else is on.
+  mutedNotifications String[] @default([])
 
   @@unique([organizationId, clerkUserId])
   @@index([organizationId])
@@ -544,4 +550,35 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([organizationId, branchId, createdAt])
   @@index([organizationId, entity, entityId])
+}
+
+// A phone or browser that receives push notifications for one member. The endpoint is the
+// browser's own secret address: a device follows the member who enabled it last.
+model PushSubscription {
+  id             String   @id @default(cuid())
+  organizationId String
+  memberId       String
+  endpoint       String   @unique
+  p256dh         String
+  auth           String
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  member       Member       @relation(fields: [memberId], references: [id])
+
+  @@index([organizationId, memberId])
+}
+
+// Notifications already sent, so that one event is announced once (e.g. "low balance of this
+// account today"). `key` names the event.
+model NotificationLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, key])
 }

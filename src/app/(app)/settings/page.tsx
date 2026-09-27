@@ -1,4 +1,4 @@
-import { CreditCard, Percent, ScrollText, Smartphone, Store, Users } from "lucide-react"
+import { Bell, CreditCard, Percent, ScrollText, Smartphone, Store, Users } from "lucide-react"
 import { redirect } from "next/navigation"
 
 import { AppHeader } from "@/components/business/app-header"
@@ -23,7 +23,6 @@ export default async function SettingsPage() {
   const team = can("member:manage")
   const audit = can("audit:view")
   const subscription = can("subscription:manage")
-  if (!catalog && !rules && !team && !audit && !subscription) redirect("/dashboard")
 
   return (
     <div className="flex flex-1 flex-col">
@@ -35,6 +34,8 @@ export default async function SettingsPage() {
         {team && <SettingsLink href="/settings/team" icon={Users} title="Équipe" description="Invitez vos agents et gérez leurs accès" />}
         {subscription && <SettingsLink href="/settings/subscription" icon={CreditCard} title="Mon abonnement" description="Formule, échéance et utilisation" />}
         {audit && <SettingsLink href="/settings/audit" icon={ScrollText} title="Journal d'audit" description="Annulations, clôtures, règles, exports" />}
+        {/* Everyone, agents included: each member chooses their own notifications. */}
+        <SettingsLink href="/settings/notifications" icon={Bell} title="Notifications" description="Soldes bas, paliers, rappel de clôture" />
       </main>
     </div>
   )

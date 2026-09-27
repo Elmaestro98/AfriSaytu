@@ -1,10 +1,12 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 
 import { cancelOperationSchema } from "@/schemas/operation"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
+import { notifyAfterCancel } from "@/server/notifications/triggers"
 import { cancelOperation } from "@/server/operations/cancel"
 import type { ActionResult } from "@/server/result"
 
@@ -13,10 +15,13 @@ export async function cancelOperationAction(raw: unknown): Promise<ActionResult>
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Saisie invalide" }
 
   try {
-    const result = await cancelOperation(await requireActor(), parsed.data)
+    const ctx = await requireActor()
+    const result = await cancelOperation(ctx, parsed.data)
     if (result.ok) {
       revalidatePath("/operations")
       revalidatePath("/dashboard")
+      const { transactionId } = parsed.data
+      after(() => notifyAfterCancel(ctx, transactionId))
     }
     return result
   } catch (error) {
