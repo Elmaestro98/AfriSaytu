@@ -9,11 +9,14 @@ import { formatAmount, formatFCFA } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { requireActor } from "@/server/auth/actor"
 import { SessionError } from "@/server/auth/session"
+import { availableReportMonths, reportBranches } from "@/server/reports/monthly"
+import { defaultReportMonth } from "@/server/reports/months"
 import { StatsAccessError, loadStats } from "@/server/stats/load"
 import { SUPERVISION_PERIODS, SUPERVISION_PERIOD_LABELS, type SupervisionPeriod } from "@/server/supervision/compute"
 
 import { AgentRanking, OperatorBreakdown, TypeBreakdown } from "./breakdowns"
 import { DailyChart } from "./daily-chart"
+import { MonthlyReportCard } from "./monthly-report-card"
 
 const COMPARED_TO: Record<SupervisionPeriod, string> = { today: "vs hier", "7d": "vs 7 jours avant", month: "vs mois précédent" }
 
@@ -30,13 +33,15 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
 
   const params = await searchParams
   const period = SUPERVISION_PERIODS.find((item) => item === params.period) ?? "today"
+  const now = new Date()
   let stats
   try {
-    stats = await loadStats(ctx, period, new Date())
+    stats = await loadStats(ctx, period, now)
   } catch (error) {
     if (error instanceof StatsAccessError) redirect("/dashboard")
     throw error
   }
+  const [reportMonthList, branches] = await Promise.all([availableReportMonths(ctx, now), reportBranches(ctx)])
   const isAgent = ctx.actor.role === "AGENT"
   const comparedTo = COMPARED_TO[period]
 
@@ -51,6 +56,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/stats">) {
             <span className="text-sm font-normal text-muted-foreground">Estimées / reçues des opérateurs, par mois</span>
           </Link>
         )}
+        <MonthlyReportCard months={reportMonthList} defaultMonth={defaultReportMonth(reportMonthList)} branches={branches} isAgent={isAgent} />
         <nav aria-label="Période" className="flex gap-1 rounded-xl border bg-card p-1 lg:self-end">
           {SUPERVISION_PERIODS.map((value) => (
             <Link key={value} href={value === "today" ? "/stats" : `/stats?period=${value}`} aria-current={value === period ? "page" : undefined} scroll={false}

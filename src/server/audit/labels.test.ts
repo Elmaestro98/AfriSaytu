@@ -26,6 +26,7 @@ describe("describeAudit", () => {
 
   it("details an export and an invitation", () => {
     expect(describeAudit({ action: "data.export", before: null, after: { format: "xlsx", count: 12 } }).detail).toBe("12 opérations en XLSX")
+    expect(describeAudit({ action: "data.export", before: null, after: { format: "pdf", report: "monthly", month: "2026-09" } }).detail).toBe("Rapport mensuel de septembre 2026 (PDF)")
     expect(describeAudit({ action: "member.invite", before: null, after: { email: "awa@exemple.sn", role: "AGENT" } }).detail).toBe("awa@exemple.sn · Agent")
   })
 

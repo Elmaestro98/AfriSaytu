@@ -1,19 +1,22 @@
 import type { Prisma } from "@/generated/prisma/client"
+import { dayKey } from "@/lib/dates"
 import type { TransactionTypeKey } from "@/lib/operation-types"
 import { operatorLogoSrc } from "@/lib/operator-logo"
 import type { ActorContext } from "@/server/auth/actor"
 import { authorize, type Actor } from "@/server/auth/permissions"
 import { dailyBranchScope, loadDailyRange, sumBy, totalOf } from "@/server/commissions/daily-range"
 import { visibilityWhere } from "@/server/operations/history-where"
-import { averageCommission, chartDays, chartStart, dailyTotals, typeBreakdown, type DayTotals, type TypeShare } from "@/server/stats/compute"
+import { averageCommission, chartDays, chartStart, dailyTotalsFor, lastDayKeys, typeBreakdown, type DayTotals, type TypeShare } from "@/server/stats/compute"
 import { percentChange, periodRanges, shares, type Range, type SupervisionPeriod } from "@/server/supervision/compute"
 
 export class StatsAccessError extends Error {}
 
 // Validated operations of a time range that the actor may see: everything (owner), their branches
 // (manager), their own operations (agent). The organization filter is added by the tenant client.
-export function statsWhere(actor: Actor, range: Range): Prisma.TransactionWhereInput {
-  return { AND: [visibilityWhere(actor), { status: "VALID", createdAt: { gte: range.from, lte: range.to } }] }
+// `branchIds` narrows the view to some branches (a report on one branch); it never widens it.
+export function statsWhere(actor: Actor, range: Range, branchIds: readonly string[] | null = null): Prisma.TransactionWhereInput {
+  const inBranches = branchIds ? [{ branchId: { in: [...branchIds] } }] : []
+  return { AND: [visibilityWhere(actor), ...inBranches, { status: "VALID", createdAt: { gte: range.from, lte: range.to } }] }
 }
 
 export type OperatorStat = { id: string; name: string; color: string | null; logoSrc: string | null; volume: number; commission: number; percent: number }
@@ -35,31 +38,45 @@ export type Stats = {
 }
 
 export async function loadStats(ctx: ActorContext, period: SupervisionPeriod, now: Date): Promise<Stats> {
-  if (!authorize(ctx.actor, "transaction:view").allowed) throw new StatsAccessError()
-
   const { current, previous } = periodRanges(period, now)
   const days = chartDays(period, now)
-  const where = statsWhere(ctx.actor, current)
+  return loadStatsBetween(ctx, { current, previous, chart: { from: chartStart(days, now), to: now, keys: lastDayKeys(days, now) } }, now)
+}
+
+// What the statistics compute, over any window: the screen's periods, or a whole month for the
+// monthly report. The chart covers `chart.keys`, one Dakar day each.
+export type StatsWindow = {
+  current: Range
+  previous: Range
+  chart: { from: Date; to: Date; keys: readonly string[] }
+  branchIds?: readonly string[] | null // narrows to these branches, inside what the actor may see
+}
+
+export async function loadStatsBetween(ctx: ActorContext, window: StatsWindow, now: Date): Promise<Stats> {
+  if (!authorize(ctx.actor, "transaction:view").allowed) throw new StatsAccessError()
+
+  const { current, previous, chart } = window
+  const narrow = window.branchIds ?? null
+  const where = statsWhere(ctx.actor, current, narrow)
   const sums = { _count: { _all: true }, _sum: { amount: true, commission: true } } as const
   const showAgents = ctx.actor.role !== "AGENT"
 
   // Daily-volume commissions belong to branches: same branches as the user's view.
-  const branchIds = dailyBranchScope(ctx)
-  const chartFrom = chartStart(days, now)
+  const branchIds = narrow ?? dailyBranchScope(ctx)
   const [currentDays, previousDays, chartDaysCommissions] = await Promise.all([
     loadDailyRange(ctx, { branchIds, from: current.from, to: current.to }, now),
     loadDailyRange(ctx, { branchIds, from: previous.from, to: previous.to }, now),
-    loadDailyRange(ctx, { branchIds, from: chartFrom, to: now }, now),
+    loadDailyRange(ctx, { branchIds, from: chart.from, to: chart.to }, now),
   ])
 
   const [totals, before, byType, byOperator, byMember, chartRows] = await Promise.all([
     ctx.db.transaction.aggregate({ where, ...sums }),
-    ctx.db.transaction.aggregate({ where: statsWhere(ctx.actor, previous), ...sums }),
+    ctx.db.transaction.aggregate({ where: statsWhere(ctx.actor, previous, narrow), ...sums }),
     ctx.db.transaction.groupBy({ by: ["type"], where, ...sums }),
     ctx.db.transaction.groupBy({ by: ["operatorId"], where, _sum: { amount: true, commission: true } }),
     showAgents ? ctx.db.transaction.groupBy({ by: ["memberId"], where, ...sums }) : Promise.resolve([]),
     ctx.db.transaction.findMany({
-      where: statsWhere(ctx.actor, { from: chartFrom, to: now }),
+      where: statsWhere(ctx.actor, { from: chart.from, to: chart.to }, narrow),
       select: { createdAt: true, amount: true, commission: true },
     }),
   ])
@@ -88,7 +105,7 @@ export async function loadStats(ctx: ActorContext, period: SupervisionPeriod, no
     count,
     countChange: percentChange(count, before._count._all),
     averageCommission: averageCommission(commission, count),
-    daily: dailyTotals(chartRows, days, now).map((day) => ({ ...day, commission: day.commission + (dailyByDay.get(day.key) ?? 0) })),
+    daily: dailyTotalsFor(chartRows, chart.keys, dayKey(now)).map((day) => ({ ...day, commission: day.commission + (dailyByDay.get(day.key) ?? 0) })),
     operators: byOperator
       .map((row) => ({
         id: row.operatorId,

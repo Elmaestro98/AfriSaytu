@@ -47,8 +47,8 @@ export function subscriptionPrice(plan: SubscriptionPlan, months: PayableMonths)
 
 // What each plan includes, as shown on the subscription screen (section 13).
 export const PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> = {
-  BASIC: ["Saisie, commissions, historique", "Caisse et clôture", "Tous les opérateurs", "Historique sur 3 mois"],
-  PRO: ["Tout le plan Basic", "Export CSV et Excel", "Rapports PDF et rapprochement des commissions", "Historique sur 24 mois"],
+  BASIC: ["Saisie, commissions, historique", "Caisse et clôture", "Rapport mensuel PDF", "Tous les opérateurs", "Historique sur 3 mois"],
+  PRO: ["Tout le plan Basic", "Export CSV et Excel", "Rapprochement des commissions", "Historique sur 24 mois"],
   BUSINESS: ["Tout le plan Pro", "Plusieurs points de vente", "Permissions avancées", "Historique illimité"],
 }
 

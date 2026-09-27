@@ -23,10 +23,12 @@ export type Reconciliation = {
 }
 
 // Commission reconciliation of one month (F-55): owner (every branch) and managers (their
-// branches). Agents do not see the operators' payouts.
-export async function loadReconciliation(ctx: ActorContext, month: string, now = new Date()): Promise<Reconciliation> {
+// branches). Agents do not see the operators' payouts. `narrowTo` limits it to some of those
+// branches (the monthly report of one branch); branches outside the actor's view are ignored.
+export async function loadReconciliation(ctx: ActorContext, month: string, now = new Date(), narrowTo: readonly string[] | null = null): Promise<Reconciliation> {
   if (ctx.actor.role === "AGENT") throw new ReconciliationAccessError()
-  const branchIds = ctx.actor.role === "OWNER" ? null : [...ctx.actor.branchIds]
+  const visible = ctx.actor.role === "OWNER" ? null : [...ctx.actor.branchIds]
+  const branchIds = narrowTo ? narrowTo.filter((id) => visible === null || visible.includes(id)) : visible
   const inBranches = branchIds ? { branchId: { in: branchIds } } : {}
   const range = monthRange(month)
   const to = range.to < now ? range.to : now

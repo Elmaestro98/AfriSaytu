@@ -29,12 +29,24 @@ export function dailyTotals(
   days: number,
   now: Date,
 ): DayTotals[] {
+  return dailyTotalsFor(rows, lastDayKeys(days, now), dayKey(now))
+}
+
+// The last `days` Dakar days ending today, oldest first.
+export function lastDayKeys(days: number, now: Date): string[] {
   const today = startOfDakarDay(now)
-  const series: DayTotals[] = []
-  for (let offset = days - 1; offset >= 0; offset -= 1) {
-    const key = dayKey(new Date(today.getTime() - offset * DAY_MS))
-    series.push({ key, volume: 0, commission: 0, count: 0, isToday: offset === 0 })
-  }
+  const keys: string[] = []
+  for (let offset = days - 1; offset >= 0; offset -= 1) keys.push(dayKey(new Date(today.getTime() - offset * DAY_MS)))
+  return keys
+}
+
+// Same, over the given days (e.g. every day of a month), in their order, empty days included.
+export function dailyTotalsFor(
+  rows: readonly { createdAt: Date; amount: number; commission: number }[],
+  keys: readonly string[],
+  todayKey: string,
+): DayTotals[] {
+  const series: DayTotals[] = keys.map((key) => ({ key, volume: 0, commission: 0, count: 0, isToday: key === todayKey }))
   const byKey = new Map(series.map((day) => [day.key, day]))
   for (const row of rows) {
     const day = byKey.get(dayKey(row.createdAt))

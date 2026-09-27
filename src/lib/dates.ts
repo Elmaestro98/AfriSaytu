@@ -76,6 +76,14 @@ export function monthRange(key: string): { from: Date; to: Date } {
   return { from, to }
 }
 
+// Every day of a month as "2026-09-01" … "2026-09-30", oldest first.
+export function monthDayKeys(key: string): string[] {
+  const { from, to } = monthRange(key)
+  const keys: string[] = []
+  for (let time = from.getTime(); time <= to.getTime(); time += 24 * 60 * 60 * 1000) keys.push(dayKey(new Date(time)))
+  return keys
+}
+
 const monthFormat = new Intl.DateTimeFormat("fr-FR", { timeZone: TIME_ZONE, month: "long", year: "numeric" })
 
 // "2026-09" -> "septembre 2026"

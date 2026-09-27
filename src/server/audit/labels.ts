@@ -1,3 +1,4 @@
+import { formatMonth, isMonthKey } from "@/lib/dates"
 import { formatFCFA } from "@/lib/money"
 import { TYPE_LABELS, type TransactionTypeKey } from "@/lib/operation-types"
 import { ROLE_LABELS, roleLabel, type RoleKey } from "@/lib/roles"
@@ -41,6 +42,8 @@ function detailOf(action: AuditActionKey, before: Json, after: Json): string | n
       return difference === 0 ? "Aucun écart" : `Écart ${signedFCFA(difference)}`
     }
     case "data.export": {
+      const month = text(after.month)
+      if (text(after.report) === "monthly" && month && isMonthKey(month)) return `Rapport mensuel de ${formatMonth(month)} (PDF)`
       const format = text(after.format)
       const count = integer(after.count)
       if (!format || count === null) return null
